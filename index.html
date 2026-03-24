@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BPO Recording System - Full Restore</title>
+    <title>BPO Recording System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --green: #10b981; --orange: #ff5722; --text-gray: #a3abc1; }
@@ -28,11 +28,6 @@
         th { text-align: left; padding: 15px; color: var(--text-gray); font-size: 11px; font-weight: 800; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 15px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #1b2559; font-weight: 600; }
         .btn-search { background: var(--orange); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; height: 48px; display: flex; align-items: center; gap: 8px; font-size: 14px; }
-        .btn-confirm { width: 100%; padding: 15px; border: none; border-radius: 12px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 15px; }
-        .btn-group { display: flex; gap: 15px; margin-bottom: 20px; background: #f4f7fe; padding: 5px; border-radius: 12px; }
-        .btn-scan { flex: 1; padding: 12px; border: none; border-radius: 10px; background: transparent; color: var(--text-gray); font-weight: bold; cursor: pointer; }
-        .btn-scan.active { background: white; color: var(--green); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .info-box { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e0e5f2; font-size: 14px; color: #1b2559; font-weight: 700; min-height: 20px; }
     </style>
 </head>
 <body>
@@ -43,30 +38,7 @@
     </div>
 
     <div id="recording" class="main-content active">
-        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 25px;">
-            <div class="card">
-                <div class="card-title">INPUT WFM ID</div>
-                <div class="btn-group">
-                    <button class="btn-scan active" id="btnIn" onclick="setScan('IN')">SCAN IN</button>
-                    <button class="btn-scan" id="btnOut" onclick="setScan('OUT')">SCAN OUT</button>
-                </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-bottom: 20px;">
-                    <div><label>Project</label><select id="recWH"><option value="VNDB">VNDB</option><option value="VNDL">VNDL</option></select></div>
-                    <div><label>Time</label><select id="timeSelect"></select></div>
-                    <div><label>Shift</label><select id="recShift"><option value="Day">Day</option><option value="Night">Night</option></select></div>
-                </div>
-                <label>BPO Staff ID</label>
-                <input type="text" id="wfmInput" placeholder="Input WFM ID..." autocomplete="off">
-                <button class="btn-confirm">CONFIRM</button>
-            </div>
-            <div class="card">
-                <div class="card-title">INFORMATION</div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                    <div><label>VENDOR</label><div class="info-box">-</div></div>
-                    <div><label>NAME</label><div class="info-box">-</div></div>
-                </div>
-            </div>
-        </div>
+        <div class="card"><div class="card-title">RECORDING (COMING SOON)</div></div>
     </div>
 
     <div id="request" class="main-content">
@@ -122,7 +94,7 @@
             document.querySelectorAll('.main-content').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById(t).classList.add('active');
-            document.getElementById('m-' + t).classList.add('active');
+            document.getElementById('m-'+t).classList.add('active');
         }
 
         function toggleCheckboxes() {
@@ -139,49 +111,39 @@
         async function init() {
             const resp = await fetch(COMMIT_URL);
             const text = await resp.text();
-            // Xử lý CSV chuẩn để không lệch cột
+            // Lấy nguyên bản dữ liệu, dùng regex để tách dấu phẩy chuẩn đét
             commitDb = text.split('\n').map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/^"|"$/g, '')));
-            
-            // Đổ giờ vào select box cho tab Recording
-            const sel = document.getElementById('timeSelect');
-            for(let i=0; i<48; i++) {
-                let h = Math.floor(i/2).toString().padStart(2,'0'), m = (i%2==0?'00':'30');
-                sel.add(new Option(`${h}:${m}`, `${h}:${m}`));
-            }
         }
 
         function searchRequest() {
             const dVal = document.getElementById('fDate').value;
             const whVal = document.getElementById('fWH').value;
-            const teams = Array.from(document.querySelectorAll('.team-cb:checked')).map(c => c.value);
-            if (!dVal) return alert("Chọn ngày đi!");
+            const selectedTeams = Array.from(document.querySelectorAll('.team-cb:checked')).map(c => c.value);
+            if (!dVal) return alert("Chọn ngày!");
 
             const targetDate = dVal.split('-').reverse().join('/');
+            const tbody = document.getElementById('reqBody');
+            tbody.innerHTML = '';
+
             const filtered = commitDb.slice(1).filter(r => {
-                const matchDate = r[0] === targetDate;
                 const isVND = (r[1] === "VNDL" || r[1] === "VNDB");
+                const matchDate = (r[0] === targetDate);
                 const matchWH = (whVal === "ALL" || r[1] === whVal);
-                const matchTeam = teams.includes(r[3]);
-                return matchDate && isVND && matchWH && matchTeam;
+                const matchTeam = selectedTeams.includes(r[3]);
+                return isVND && matchDate && matchWH && matchTeam;
             });
 
-            const tbody = document.getElementById('reqBody');
-            tbody.innerHTML = filtered.length ? '' : '<tr><td colspan="9" style="text-align:center;">No data found</td></tr>';
-            
             filtered.forEach(r => {
-                // Đổ đúng dữ liệu A->J
-                // r[8] là Loại CTV (I), r[9] là Booking (J)
+                // Đổ nguyên si các cột từ file Google Sheets qua
                 tbody.innerHTML += `<tr>
-                    <td>${r[0] || ''}</td>
-                    <td style="color:var(--primary)">${r[1] || ''}</td>
-                    <td>${r[2] || ''}</td>
-                    <td>${r[3] || ''}</td>
-                    <td>${r[4] || ''}</td>
-                    <td>${r[5] || ''}</td>
-                    <td>${r[6] || ''}</td>
-                    <td>${r[8] || ''}</td>
-                    <td style="font-weight:800; color:#1b2559;">${r[9] || '0'}</td>
-                </tr>`;
+                    <td>${r[0]}</td>
+                    <td style="color:var(--primary); font-weight:800">${r[1]}</td>
+                    <td>${r[2]}</td>
+                    <td>${r[3]}</td>
+                    <td>${r[4]}</td>
+                    <td>${r[5]}</td>
+                    <td>${r[6]}</td>
+                    <td>${r[8]}</td> <td style="font-weight:800; color:#1b2559;">${r[9] || '0'}</td> </tr>`;
             });
             if(expanded) toggleCheckboxes();
         }
