@@ -1,5 +1,6 @@
 <script>
         const SPREADSHEET_ID = '1jE1fj-KGVs0n69XIFVaMGgJeJsssCLWU1awFkCFs35g';
+        // Link này giúp lấy data sạch hơn
         const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&gid=0`;
         
         let db = [];
@@ -9,12 +10,13 @@
             try {
                 const res = await fetch(CSV_URL);
                 const text = await res.text();
-                // Tách dòng và làm sạch dấu ngoặc kép của Google API
+                // Xử lý tách dòng và xóa bỏ dấu ngoặc kép "" do Google API tạo ra
                 db = text.split('\n').map(row => 
                     row.split(',').map(cell => cell.replace(/^"|"$/g, '').trim())
                 );
                 document.getElementById('stt').innerText = "🟢 Data Ready";
                 document.getElementById('stt').style.color = "#10b981";
+                console.log("Data loaded:", db[1]); // Log dòng đầu để debug nếu cần
             } catch (e) {
                 document.getElementById('stt').innerText = "🔴 Lỗi kết nối!";
             }
@@ -25,31 +27,28 @@
                 const id = this.value.trim();
                 if (!id) return;
 
-                // Tìm dòng chứa mã ID ông quét (Dò trong tất cả các cột để đảm bảo trúng dòng)
+                // Tìm dòng chứa mã ID (WFM Booking nằm ở cột J)
                 const f = db.find(row => row.some(cell => cell === id));
 
                 if (f) {
                     audio.play();
                     
-                    /* MAPPING CỘT CHUẨN:
-                       f[1]  = Cột B (Station -> VENDOR)
-                       f[3]  = Cột D (Team/Fullname -> FULL NAME)
-                       f[8]  = Cột I (Loại CTV -> USER WFM ID)
-                       f[10] = Cột K (Email -> WFM EMAIL)
+                    /* Cấu trúc cột dựa trên thực tế Google API trả về:
+                       f[0] tương ứng cột B (Station)
+                       f[1] tương ứng cột C (Vendors)
+                       f[7] tương ứng cột I (Loại CTV)
                     */
 
-                    const vendorVal  = f[1] || "-";  
-                    const nameVal    = f[3] || "-";  
-                    const userWfmVal = f[8] || "-";  
-                    const emailVal   = f[10] || "-"; 
+                    const vendorVal = f[0] || "-";    // Cột B (VNDL/VNDB)
+                    const nameVal   = f[1] || "-";    // Cột C (Agari/SKT...)
+                    const userWfmVal = f[7] || "-";   // Cột I (Loại CTV)
 
                     document.getElementById('resID').innerText = id;
                     document.getElementById('resVendor').innerText = vendorVal;
                     document.getElementById('resName').innerText = nameVal;
                     document.getElementById('resUserID').innerText = userWfmVal;
-                    document.getElementById('resEmail').innerText = emailVal;
+                    document.getElementById('resEmail').innerText = "N/A";
 
-                    // Ghi log vào bảng bên dưới
                     const pj = document.getElementById('pj').value;
                     const log = `<tr>
                         <td>${new Date().toLocaleTimeString()}</td>
@@ -59,8 +58,7 @@
                         <td style="color:#10b981;font-weight:bold">Success</td>
                     </tr>`;
                     document.getElementById('logList').insertAdjacentHTML('afterbegin', log);
-                    
-                    this.value = ''; // Reset ô nhập
+                    this.value = '';
                 } else { 
                     alert("Không tìm thấy mã: " + id); 
                 }
