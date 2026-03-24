@@ -2,69 +2,67 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BPO Recording System - STABLE</title>
+    <title>BPO Recording System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #2b26c1; --bg: #f4f7fe; --blue: #4d44ff; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
         .sidebar { width: 260px; background: var(--sidebar); color: white; padding-top: 20px; flex-shrink: 0; }
-        .nav-item { padding: 15px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; border-left: 4px solid transparent; }
+        .nav-item { padding: 15px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; }
         .nav-item.active { background: rgba(255,255,255,0.1); color: white; border-left: 4px solid white; }
         .nav-item i { margin-right: 15px; width: 20px; text-align: center; }
         .main { flex: 1; padding: 25px; overflow-y: auto; }
         .container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
         .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .card-title { font-weight: bold; color: #1a1c3d; border-left: 4px solid var(--blue); padding-left: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .info-box { background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 20px; font-size: 14px; color: #333; font-weight: bold; }
-        label { display: block; font-size: 11px; font-weight: bold; color: #718096; margin-bottom: 5px; text-transform: uppercase; }
-        input[type="text"] { width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; outline: none; background: #fff; box-sizing: border-box; font-size: 15px; }
-        input[type="text"]:focus { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(77, 68, 255, 0.1); }
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        label { display: block; font-size: 11px; font-weight: bold; color: #1a1c3d; margin-bottom: 5px; text-transform: uppercase; }
+        .info-box { background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 20px; font-size: 13px; color: #333; font-weight: 600; }
+        input[type="text"], select { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; background: #f8fafc; box-sizing: border-box; }
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; margin-top: 10px; }
         th { text-align: left; padding: 12px; color: #a0aec0; font-size: 11px; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #4a5568; }
-        .status-ready { color: #10b981; font-size: 12px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="nav-item active"><i class="fas fa-microphone"></i> Recording BPO PT</div>
-        <div class="nav-item"><i class="fas fa-wallet"></i> Total VND Request</div>
-        <div class="nav-item"><i class="fas fa-chart-line"></i> Fill rate</div>
+        <a href="#" class="nav-item active"><i class="fas fa-microphone"></i> Recording BPO PT</a>
+        <a href="#" class="nav-item"><i class="fas fa-wallet"></i> Total VND Request</a>
+        <a href="#" class="nav-item"><i class="fas fa-chart-line"></i> Fill rate</a>
     </div>
     <div class="main">
         <div class="container">
             <div class="card">
-                <div class="card-title">QUÉT MÃ QH <span id="stt" style="color:#e74c3c; font-size: 12px;">🔴 Đang tải dữ liệu...</span></div>
-                <div style="margin-bottom:15px;">
-                    <label>BPO Staff ID (Mã QH)</label>
-                    <input type="text" id="wfmInput" placeholder="Dán mã SPAGR... rồi nhấn Enter" autocomplete="off" autofocus>
+                <div class="card-title">INPUT WFM ID <span id="stt" style="color:#e74c3c; font-size: 12px;">🔴 Connecting...</span></div>
+                <div class="grid-inputs">
+                    <div><label>Project Code</label><select id="pj"><option value="VNDB">VNDB</option><option value="VNDL">VNDL</option></select></div>
+                    <div><label>Time</label><select id="ti"><option>09:00</option></select></div>
+                    <div><label>Shift</label><select id="sh"><option value="Day">Day</option><option value="Night">Night</option></select></div>
                 </div>
+                <label>BPO Staff ID (Nhập mã WFM cột I)</label>
+                <input type="text" id="wfmInput" placeholder="Ví dụ: S098192..." autocomplete="off">
             </div>
             <div class="card">
                 <div class="card-title">BPO PT INFORMATION</div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                <div class="grid-inputs" style="grid-template-columns: 1fr 1fr;">
                     <div><label>VENDOR</label><div class="info-box" id="resVendor">-</div></div>
                     <div><label>FULL NAME</label><div class="info-box" id="resName">-</div></div>
                 </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                <div class="grid-inputs" style="grid-template-columns: 1fr 1fr;">
                     <div><label>WFM ID</label><div class="info-box" id="resID">-</div></div>
                     <div><label>USER WFM ID</label><div class="info-box" id="resUserID">-</div></div>
                 </div>
-                <div><label>WFM EMAIL</label><div class="info-box" id="resEmail">-</div></div>
+                <label>WFM EMAIL</label><div class="info-box" id="resEmail">-</div>
             </div>
         </div>
-        <div class="card" style="padding:0;">
-            <div class="card-title" style="margin:20px 0 0 20px;">LỊCH SỬ QUÉT (DATA ENTRY LOGS)</div>
-            <table>
-                <thead><tr><th>Thời gian</th><th>Mã QH</th><th>Họ và Tên</th><th>Trạng thái</th></tr></thead>
-                <tbody id="logList"></tbody>
-            </table>
+        <div class="card" style="padding:0;"><div class="card-title" style="margin:20px 0 0 20px;">DATA ENTRY LOGS</div>
+            <table><thead><tr><th>Time</th><th>Warehouse</th><th>WFM ID</th><th>Full name</th><th>Status</th></tr></thead>
+            <tbody id="logList"></tbody></table>
         </div>
     </div>
 
     <script>
-        // Link CSV "thần thánh" của ông đã check OK
+        // Sử dụng link CSV từ trang tính của bạn
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=0&single=true&output=csv';
         
         let db = [];
@@ -72,70 +70,55 @@
 
         async function init() {
             try {
-                // Thêm timestamp để ép Google luôn nhả dữ liệu mới nhất khi F5
                 const response = await fetch(`${CSV_URL}&t=${new Date().getTime()}`);
                 const data = await response.text();
-                
-                // Tách dòng CSV chuẩn
                 const rows = data.split(/\r?\n/);
-                db = rows.map(row => {
-                    return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '').trim());
-                });
+                // Phân tách CSV xử lý cả dấu ngoặc kép
+                db = rows.map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '').trim()));
 
                 if (db.length > 1) {
-                    document.getElementById('stt').innerText = "🟢 DỮ LIỆU ĐÃ SẴN SÀNG";
-                    document.getElementById('stt').className = "status-ready";
+                    document.getElementById('stt').innerText = "🟢 Data Ready";
+                    document.getElementById('stt').style.color = "#10b981";
                 }
             } catch (error) {
-                console.error("Lỗi:", error);
-                document.getElementById('stt').innerText = "🔴 LỖI KẾT NỐI!";
+                document.getElementById('stt').innerText = "🔴 Connection Error!";
             }
         }
 
         document.getElementById('wfmInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                const inputVal = this.value.trim();
-                if (!inputVal) return;
+                const val = this.value.trim();
+                if (!val) return;
 
-                // Tìm mã QH ở cột A (index 0)
-                const found = db.find(row => row[0] === inputVal);
+                // TÌM KIẾM TẠI CỘT I (INDEX 8)
+                const found = db.find(row => row[8] === val);
 
                 if (found) {
                     audio.play();
-                    
-                    /* MAPPING THEO FILE CSV CỦA ÔNG:
-                       f[1]  = Cột B (Nhà thầu)
-                       f[3]  = Cột D (Họ và tên)
-                       f[8]  = Cột I (Mã WFM)
-                       f[9]  = Cột J (User WFM ID)
-                       f[10] = Cột K (WFM Email)
-                    */
-                    document.getElementById('resVendor').innerText = found[1] || "-";
-                    document.getElementById('resName').innerText   = found[3] || "-";
-                    document.getElementById('resID').innerText     = found[8] || "-";
-                    document.getElementById('resUserID').innerText = found[9] || "-";
-                    document.getElementById('resEmail').innerText  = found[10] || "-";
+                    // Mapping dữ liệu dựa trên file Sheets của bạn:
+                    document.getElementById('resVendor').innerText = found[1] || "-"; // Cột B
+                    document.getElementById('resName').innerText   = found[3] || "-"; // Cột D
+                    document.getElementById('resID').innerText     = found[8] || "-"; // Cột I
+                    document.getElementById('resUserID').innerText = found[9] || "-"; // Cột J
+                    document.getElementById('resEmail').innerText  = found[10] || "-"; // Cột K
 
-                    // Ghi log vào bảng
-                    const logRow = `<tr>
+                    const log = `<tr>
                         <td>${new Date().toLocaleTimeString()}</td>
-                        <td>${inputVal}</td>
-                        <td>${found[3] || '-'}</td>
+                        <td>${document.getElementById('pj').value}</td>
+                        <td>${val}</td>
+                        <td>${found[3]}</td>
                         <td style="color:#10b981;font-weight:bold">Thành công</td>
                     </tr>`;
-                    document.getElementById('logList').insertAdjacentHTML('afterbegin', logRow);
-                    this.value = ''; // Xóa ô nhập sau khi quét xong
+                    document.getElementById('logList').insertAdjacentHTML('afterbegin', log);
+                    this.value = '';
                 } else {
-                    alert("Không tìm thấy Mã QH này: " + inputVal);
+                    alert("Không tìm thấy Mã WFM: " + val);
                     this.value = '';
                 }
             }
         });
 
-        // Khởi tạo ứng dụng
         window.onload = init;
-        // Tự động cập nhật data mỗi 2 phút (để load nhân sự mới nếu ông có thêm vào Sheets)
-        setInterval(init, 120000);
     </script>
 </body>
 </html>
