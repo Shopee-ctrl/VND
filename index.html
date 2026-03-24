@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BPO Recording System</title>
+    <title>BPO Recording System - Fix Booking</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --green: #10b981; --orange: #ff5722; --text-gray: #a3abc1; }
@@ -14,7 +14,7 @@
         .nav-item i { margin-right: 15px; width: 20px; text-align: center; }
         .main-content { flex: 1; padding: 25px; overflow-y: auto; display: none; }
         .main-content.active { display: block; }
-        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); margin-bottom: 25px; }
+        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); position: relative; margin-bottom: 25px; }
         .card-title { font-weight: bold; color: #1b2559; border-left: 4px solid var(--primary); padding-left: 15px; margin-bottom: 25px; text-transform: uppercase; font-size: 16px; }
         label { display: block; font-size: 11px; font-weight: 800; color: #1b2559; margin-bottom: 8px; text-transform: uppercase; }
         input, select { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 12px; outline: none; font-size: 14px; font-weight: 600; color: #1b2559; background: white; }
@@ -28,20 +28,21 @@
         th { text-align: left; padding: 15px; color: var(--text-gray); font-size: 11px; font-weight: 800; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 15px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #1b2559; font-weight: 600; }
         .btn-search { background: var(--orange); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; height: 48px; display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .tag-wh { color: var(--primary); font-weight: 800; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="nav-item active" id="m-recording" onclick="switchTab('recording')"><i class="fas fa-microphone"></i> Recording BPO PT</div>
-        <div class="nav-item" id="m-request" onclick="switchTab('request')"><i class="fas fa-wallet"></i> Total VND Request</div>
+        <div class="nav-item" onclick="switchTab('recording')"><i class="fas fa-microphone"></i> Recording BPO PT</div>
+        <div class="nav-item active" id="m-request" onclick="switchTab('request')"><i class="fas fa-wallet"></i> Total VND Request</div>
         <div class="nav-item"><i class="fas fa-chart-line"></i> Fill rate</div>
     </div>
 
-    <div id="recording" class="main-content active">
+    <div id="recording" class="main-content">
         <div class="card"><div class="card-title">RECORDING (COMING SOON)</div></div>
     </div>
 
-    <div id="request" class="main-content">
+    <div id="request" class="main-content active">
         <div class="card">
             <div class="card-title">FILTER DATA REQUEST</div>
             <div style="display: flex; gap: 20px; align-items: flex-end;">
@@ -75,12 +76,7 @@
         <div class="card" style="padding:0;">
             <div class="card-title" style="margin:25px 0 15px 25px;">TOTAL VND REQUEST</div>
             <table>
-                <thead>
-                    <tr>
-                        <th>Date</th><th>Station</th><th>Vendor</th><th>Team</th><th>Task</th>
-                        <th>Bắt đầu</th><th>Kết thúc</th><th>Loại CTV</th><th>Booking</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>Date</th><th>Station</th><th>Vendor</th><th>Team</th><th>Task</th><th>Bắt đầu</th><th>Kết thúc</th><th>Booking</th></tr></thead>
                 <tbody id="reqBody"></tbody>
             </table>
         </div>
@@ -94,7 +90,6 @@
             document.querySelectorAll('.main-content').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById(t).classList.add('active');
-            document.getElementById('m-'+t).classList.add('active');
         }
 
         function toggleCheckboxes() {
@@ -105,45 +100,49 @@
 
         function updateTeamText() {
             let checked = Array.from(document.querySelectorAll('.team-cb:checked')).map(c => c.value);
-            document.getElementById("selectedTeamText").innerText = checked.length === 0 ? "Chọn Team" : (checked.length === 5 ? "Tất cả Team" : checked.join(", "));
+            document.getElementById("selectedTeamText").innerText = checked.length === 0 ? "Chưa chọn" : (checked.length === 5 ? "Tất cả Team" : checked.join(", "));
         }
 
         async function init() {
             const resp = await fetch(COMMIT_URL);
             const text = await resp.text();
-            // Lấy nguyên bản dữ liệu, dùng regex để tách dấu phẩy chuẩn đét
-            commitDb = text.split('\n').map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/^"|"$/g, '')));
+            commitDb = text.split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
         }
 
         function searchRequest() {
             const dVal = document.getElementById('fDate').value;
             const whVal = document.getElementById('fWH').value;
             const selectedTeams = Array.from(document.querySelectorAll('.team-cb:checked')).map(c => c.value);
-            if (!dVal) return alert("Chọn ngày!");
-
+            
+            if (!dVal) { alert("Vui lòng chọn ngày!"); return; }
             const targetDate = dVal.split('-').reverse().join('/');
-            const tbody = document.getElementById('reqBody');
-            tbody.innerHTML = '';
-
+            
+            // LỌC DATA
             const filtered = commitDb.slice(1).filter(r => {
-                const isVND = (r[1] === "VNDL" || r[1] === "VNDB");
-                const matchDate = (r[0] === targetDate);
+                const isVND = (r[1] === "VNDL" || r[1] === "VNDB"); // Cột B
+                const matchDate = (r[0] === targetDate);            // Cột A
                 const matchWH = (whVal === "ALL" || r[1] === whVal);
-                const matchTeam = selectedTeams.includes(r[3]);
+                const matchTeam = selectedTeams.includes(r[3]);     // Cột D
                 return isVND && matchDate && matchWH && matchTeam;
             });
 
+            const tbody = document.getElementById('reqBody');
+            tbody.innerHTML = filtered.length ? '' : '<tr><td colspan="8" style="text-align:center;">Không có dữ liệu</td></tr>';
+            
             filtered.forEach(r => {
-                // Đổ nguyên si các cột từ file Google Sheets qua
+                // FIX LỖI: Lấy Booking ở cột J (index 9) theo hình mày gửi
+                const bookingValue = r[9] || '0'; 
+                
                 tbody.innerHTML += `<tr>
                     <td>${r[0]}</td>
-                    <td style="color:var(--primary); font-weight:800">${r[1]}</td>
+                    <td class="tag-wh">${r[1]}</td>
                     <td>${r[2]}</td>
                     <td>${r[3]}</td>
                     <td>${r[4]}</td>
-                    <td>${r[5]}</td>
-                    <td>${r[6]}</td>
-                    <td>${r[8]}</td> <td style="font-weight:800; color:#1b2559;">${r[9] || '0'}</td> </tr>`;
+                    <td style="color:var(--primary)">${r[5]}</td>
+                    <td style="color:#f56565">${r[6]}</td>
+                    <td style="font-weight:800; color:#1b2559;">${bookingValue}</td>
+                </tr>`;
             });
             if(expanded) toggleCheckboxes();
         }
