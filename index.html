@@ -9,7 +9,7 @@
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --green: #10b981; --orange: #ff5722; --text-gray: #a3abc1; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar */
+        /* Sidebar giữ nguyên */
         .sidebar { width: 260px; background: var(--sidebar); color: white; padding-top: 20px; flex-shrink: 0; }
         .nav-item { padding: 15px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; margin: 5px 15px; border-radius: 12px; cursor: pointer; transition: 0.3s; }
         .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(77, 68, 255, 0.3); }
@@ -21,24 +21,30 @@
         .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); position: relative; margin-bottom: 25px; }
         .card-title { font-weight: bold; color: #1b2559; border-left: 4px solid var(--primary); padding-left: 15px; margin-bottom: 25px; text-transform: uppercase; font-size: 16px; }
         
-        /* Buttons */
-        .btn-group { display: flex; gap: 15px; margin-bottom: 20px; background: #f4f7fe; padding: 5px; border-radius: 12px; }
-        .btn-scan { flex: 1; padding: 12px; border: none; border-radius: 10px; background: transparent; color: var(--text-gray); font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
-        .btn-scan.active { background: white; color: var(--green); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        
-        .btn-confirm { width: 100%; padding: 15px; border: none; border-radius: 12px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 15px; }
-        
-        .btn-search { background: var(--orange); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; height: 48px; box-shadow: 0 4px 10px rgba(255, 87, 34, 0.2); }
-
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        /* Form elements */
         label { display: block; font-size: 11px; font-weight: 800; color: #1b2559; margin-bottom: 8px; text-transform: uppercase; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 12px; outline: none; font-size: 14px; font-weight: 600; color: #1b2559; }
         
-        input, select { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 12px; outline: none; font-size: 14px; font-weight: 600; }
-        .info-box { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e0e5f2; font-size: 14px; color: #1b2559; font-weight: 700; min-height: 20px; }
-        
+        /* Dropdown chọn nhiều Team */
+        .multiselect { position: relative; width: 100%; }
+        .selectBox { position: relative; cursor: pointer; }
+        .overSelect { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
+        #checkboxes { display: none; border: 1px solid #e0e5f2; border-radius: 12px; background: white; position: absolute; width: 100%; z-index: 100; padding: 10px; box-sizing: border-box; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        #checkboxes label { display: flex; align-items: center; text-transform: none; font-size: 13px; font-weight: 600; padding: 8px 5px; cursor: pointer; border-radius: 5px; }
+        #checkboxes label:hover { background: #f4f7fe; }
+        #checkboxes input { width: auto; margin-right: 10px; }
+
+        /* Table */
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 15px; color: var(--text-gray); font-size: 11px; font-weight: 800; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 15px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #1b2559; font-weight: 600; }
+        
+        .btn-search { background: var(--orange); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; height: 48px; box-shadow: 0 4px 10px rgba(255, 87, 34, 0.2); transition: 0.2s; }
+        .btn-confirm { width: 100%; padding: 15px; border: none; border-radius: 12px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        .btn-group { display: flex; gap: 15px; margin-bottom: 20px; background: #f4f7fe; padding: 5px; border-radius: 12px; }
+        .btn-scan { flex: 1; padding: 12px; border: none; border-radius: 10px; background: transparent; color: var(--text-gray); font-weight: bold; cursor: pointer; }
+        .btn-scan.active { background: white; color: var(--green); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .info-box { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e0e5f2; font-size: 14px; color: #1b2559; font-weight: 700; min-height: 20px; }
         .tag-in { background: #e6fffa; color: var(--green); padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; }
         .tag-out { background: #fff5f5; color: #f56565; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; }
     </style>
@@ -58,19 +64,13 @@
                     <button class="btn-scan active" id="btnIn" onclick="setScan('IN')"><i class="fas fa-sign-in"></i> SCAN IN</button>
                     <button class="btn-scan" id="btnOut" onclick="setScan('OUT')"><i class="fas fa-sign-out-alt"></i> SCAN OUT</button>
                 </div>
-                <div class="grid-3">
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-bottom: 20px;">
                     <div><label>Project Code</label>
-                        <div style="display:flex; gap:15px; margin-top:10px;">
-                            <label><input type="radio" name="pj" value="VNDB" checked> VNDB</label>
-                            <label><input type="radio" name="pj" value="VNDL"> VNDL</label>
-                        </div>
+                        <select id="recWH"><option value="VNDB">VNDB</option><option value="VNDL">VNDL</option></select>
                     </div>
                     <div><label>Time</label><select id="timeSelect"></select></div>
                     <div><label>Shift</label>
-                        <div style="display:flex; gap:15px; margin-top:10px;">
-                            <label><input type="radio" name="sh" value="Day" checked> Day</label>
-                            <label><input type="radio" name="sh" value="Night"> Night</label>
-                        </div>
+                        <select id="recShift"><option value="Day">Day</option><option value="Night">Night</option></select>
                     </div>
                 </div>
                 <label>BPO Staff ID (WFM ID)</label>
@@ -79,18 +79,18 @@
             </div>
             <div class="card">
                 <div class="card-title">BPO PT INFORMATION</div>
-                <div class="grid-3" style="grid-template-columns: 1fr 1fr;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                     <div><label>VENDOR</label><div class="info-box" id="resVendor">-</div></div>
                     <div><label>FULL NAME</label><div class="info-box" id="resName">-</div></div>
                     <div><label>WFM ID</label><div class="info-box" id="resID">-</div></div>
                     <div><label>USER WFM ID</label><div class="info-box" id="resUserID">-</div></div>
                 </div>
-                <label>WFM EMAIL</label><div class="info-box" id="resEmail">-</div>
+                <div style="margin-top:15px;"><label>WFM EMAIL</label><div class="info-box" id="resEmail">-</div></div>
             </div>
         </div>
         <div class="card" style="padding:0;"><div class="card-title" style="margin:25px 0 15px 25px;">DATA ENTRY LOGS</div>
             <table>
-                <thead><tr><th>Scanned At</th><th>Warehouse</th><th>WFM ID</th><th>Full Name</th><th>Scan Type</th><th>Status</th></tr></thead>
+                <thead><tr><th>Time</th><th>Warehouse</th><th>WFM ID</th><th>Full Name</th><th>Type</th><th>Status</th></tr></thead>
                 <tbody id="logList"></tbody>
             </table>
         </div>
@@ -102,10 +102,27 @@
             <div style="display: flex; gap: 20px; align-items: flex-end;">
                 <div style="flex: 1;"><label>Filter by Date</label><input type="date" id="fDate"></div>
                 <div style="flex: 1;"><label>Warehouse</label>
-                    <select id="fWH"><option value="ALL">All Warehouse</option><option value="VNDB">VNDB</option><option value="VNDL">VNDL</option></select>
+                    <select id="fWH">
+                        <option value="ALL">VNDB & VNDL (Tất cả)</option>
+                        <option value="VNDB">VNDB</option>
+                        <option value="VNDL">VNDL</option>
+                    </select>
                 </div>
-                <div style="flex: 1;"><label>Team</label>
-                    <select id="fTeam"><option value="ALL">All Teams</option><option value="Inbound">Inbound</option><option value="Inventory">Inventory</option><option value="FD">FD</option><option value="Return">Return</option></select>
+                <div style="flex: 1;">
+                    <label>Select Team(s)</label>
+                    <div class="multiselect">
+                        <div class="selectBox" onclick="toggleCheckboxes()">
+                            <select style="color: #1b2559;"><option id="selectedTeamText">Tất cả Team</option></select>
+                            <div class="overSelect"></div>
+                        </div>
+                        <div id="checkboxes">
+                            <label><input type="checkbox" class="team-cb" value="Inbound" checked onchange="updateTeamText()">Inbound</label>
+                            <label><input type="checkbox" class="team-cb" value="Outbound" checked onchange="updateTeamText()">Outbound</label>
+                            <label><input type="checkbox" class="team-cb" value="Inventory" checked onchange="updateTeamText()">Inventory</label>
+                            <label><input type="checkbox" class="team-cb" value="FD" checked onchange="updateTeamText()">FD</label>
+                            <label><input type="checkbox" class="team-cb" value="Return" checked onchange="updateTeamText()">Return</label>
+                        </div>
+                    </div>
                 </div>
                 <button class="btn-search" onclick="searchRequest()"><i class="fas fa-search"></i> Search</button>
             </div>
@@ -122,7 +139,7 @@
     <script>
         const COMMIT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=915514461&single=true&output=csv';
         const STAFF_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=0&single=true&output=csv';
-        let staffDb = [], commitDb = [], scanMode = "IN";
+        let staffDb = [], commitDb = [], scanMode = "IN", expanded = false;
 
         function switchTab(t) {
             document.querySelectorAll('.main-content').forEach(p => p.classList.remove('active'));
@@ -137,15 +154,30 @@
             document.getElementById('btnOut').classList.toggle('active', m === 'OUT');
         }
 
+        function toggleCheckboxes() {
+            let cb = document.getElementById("checkboxes");
+            cb.style.display = expanded ? "none" : "block";
+            expanded = !expanded;
+        }
+
+        function updateTeamText() {
+            let checked = Array.from(document.querySelectorAll('.team-cb:checked')).map(c => c.value);
+            let text = checked.length === 0 ? "Chưa chọn" : (checked.length === 5 ? "Tất cả Team" : (checked.length > 2 ? checked.length + " Teams" : checked.join(", ")));
+            document.getElementById("selectedTeamText").innerText = text;
+        }
+
         async function init() {
-            const [r1, r2] = await Promise.all([fetch(STAFF_URL), fetch(COMMIT_URL)]);
-            staffDb = (await r1.text()).split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
-            commitDb = (await r2.text()).split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
-            const sel = document.getElementById('timeSelect');
-            for(let i=0; i<48; i++) {
-                let h = Math.floor(i/2).toString().padStart(2,'0'), m = (i%2==0?'00':'30');
-                sel.add(new Option(`${h}:${m}`, `${h}:${m}`));
-            }
+            try {
+                const [r1, r2] = await Promise.all([fetch(STAFF_URL), fetch(COMMIT_URL)]);
+                staffDb = (await r1.text()).split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+                commitDb = (await r2.text()).split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+                
+                const sel = document.getElementById('timeSelect');
+                for(let i=0; i<48; i++) {
+                    let h = Math.floor(i/2).toString().padStart(2,'0'), m = (i%2==0?'00':'30');
+                    sel.add(new Option(`${h}:${m}`, `${h}:${m}`));
+                }
+            } catch(e) { alert("Lỗi tải dữ liệu từ Google Sheets!"); }
         }
 
         function handleConfirm() {
@@ -156,31 +188,51 @@
                 document.getElementById('resID').innerText = s[8]; document.getElementById('resUserID').innerText = s[9];
                 document.getElementById('resEmail').innerText = s[10];
                 const now = new Date();
-                document.getElementById('logList').insertAdjacentHTML('afterbegin', `<tr><td>${now.getHours()}:${now.getMinutes()} - ${now.toLocaleDateString('vi-VN')}</td><td>${document.querySelector('input[name="pj"]:checked').value}</td><td>${id}</td><td>${s[3]}</td><td><span class="${scanMode==='IN'?'tag-in':'tag-out'}">${scanMode}</span></td><td style="color:var(--green)">Thành công</td></tr>`);
+                document.getElementById('logList').insertAdjacentHTML('afterbegin', `<tr><td>${now.toLocaleTimeString()}</td><td>${document.getElementById('recWH').value}</td><td>${id}</td><td>${s[3]}</td><td><span class="${scanMode==='IN'?'tag-in':'tag-out'}">${scanMode}</span></td><td style="color:var(--green)">Thành công</td></tr>`);
                 document.getElementById('wfmInput').value = '';
-            } else alert("Sai WFM rồi!");
+            } else alert("Không tìm thấy WFM ID!");
         }
 
         function searchRequest() {
             const dVal = document.getElementById('fDate').value;
             const whVal = document.getElementById('fWH').value;
-            const tVal = document.getElementById('fTeam').value;
+            const selectedTeams = Array.from(document.querySelectorAll('.team-cb:checked')).map(c => c.value);
+            
             if (!dVal) { alert("Chọn Ngày đã mày!"); return; }
+            if (selectedTeams.length === 0) { alert("Tích chọn ít nhất 1 Team!"); return; }
+
             const targetDate = dVal.split('-').reverse().join('/');
+            
+            // Logic: Chỉ lấy VNDL/VNDB, đúng ngày, và Team nằm trong danh sách đã tích
             const filtered = commitDb.slice(1).filter(r => {
-                const mD = (r[0] === targetDate);
-                const mW = (whVal === "ALL" || r[1] === whVal);
-                const mT = (tVal === "ALL" || r[3] === tVal);
-                return mD && mW && mT;
+                const isCorrectWH = (r[1] === "VNDL" || r[1] === "VNDB");
+                const matchDate = (r[0] === targetDate);
+                const matchWH = (whVal === "ALL" || r[1] === whVal);
+                const matchTeam = selectedTeams.includes(r[3]);
+                
+                return isCorrectWH && matchDate && matchWH && matchTeam;
             });
+
             const tbody = document.getElementById('reqBody');
-            tbody.innerHTML = filtered.length ? '' : '<tr><td colspan="8" style="text-align:center;">No Data Found</td></tr>';
+            tbody.innerHTML = filtered.length ? '' : '<tr><td colspan="8" style="text-align:center;">Không có dữ liệu phù hợp (Chỉ lấy VNDB/VNDL)</td></tr>';
+            
             filtered.forEach(r => {
-                tbody.innerHTML += `<tr><td>${r[0]}</td><td style="color:var(--primary)">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td style="color:var(--primary)">${r[5]}</td><td style="color:#f56565">${r[6]}</td><td style="font-weight:800">${r[7]}</td></tr>`;
+                tbody.innerHTML += `<tr>
+                    <td>${r[0] || ''}</td>
+                    <td style="color:var(--primary); font-weight:800">${r[1] || ''}</td>
+                    <td>${r[2] || ''}</td>
+                    <td>${r[3] || ''}</td>
+                    <td>${r[4] || ''}</td>
+                    <td style="color:var(--primary)">${r[5] || ''}</td>
+                    <td style="color:#f56565">${r[6] || ''}</td>
+                    <td style="font-weight:800">${r[7] || ''}</td>
+                </tr>`;
             });
+            if(expanded) toggleCheckboxes();
         }
 
         window.onload = init;
+        window.onclick = function(e) { if (!e.target.closest('.multiselect') && expanded) toggleCheckboxes(); }
         document.getElementById('wfmInput').onkeypress = (e) => { if(e.key === 'Enter') handleConfirm(); };
     </script>
 </body>
