@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO Recording System - Final Version</title>
+    <title>BPO Recording System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #2b26c1; --bg: #f4f7fe; --blue: #4d44ff; }
@@ -28,8 +28,6 @@
 <body>
     <div class="sidebar">
         <a href="#" class="nav-item active"><i class="fas fa-microphone"></i> Recording BPO PT</a>
-        <a href="#" class="nav-item"><i class="fas fa-wallet"></i> Total VND Request</a>
-        <a href="#" class="nav-item"><i class="fas fa-chart-line"></i> Fill rate</a>
     </div>
     <div class="main">
         <div class="container">
@@ -47,14 +45,14 @@
             <div class="card">
                 <div class="card-title">BPO PT INFORMATION</div>
                 <div class="grid-inputs" style="grid-template-columns: 1fr 1fr;">
-                    <div><label>VENDOR</label><div class="info-box" id="resVendor">-</div></div>
-                    <div><label>FULL NAME</label><div class="info-box" id="resName">-</div></div>
+                    <div><label>VENDOR (Cột B)</label><div class="info-box" id="resVendor">-</div></div>
+                    <div><label>FULL NAME (Cột D)</label><div class="info-box" id="resName">-</div></div>
                 </div>
                 <div class="grid-inputs" style="grid-template-columns: 1fr 1fr;">
                     <div><label>WFM ID</label><div class="info-box" id="resID">-</div></div>
-                    <div><label>USER WFM ID</label><div class="info-box" id="resUserID">-</div></div>
+                    <div><label>USER WFM ID (Cột I)</label><div class="info-box" id="resUserID">-</div></div>
                 </div>
-                <label>WFM EMAIL</label><div class="info-box" id="resEmail">-</div>
+                <label>WFM EMAIL (Cột K)</label><div class="info-box" id="resEmail">-</div>
             </div>
         </div>
         <div class="card" style="padding:0;"><div class="card-title" style="margin:20px 0 0 20px;">DATA ENTRY LOGS</div>
@@ -74,10 +72,14 @@
             try {
                 const res = await fetch(CSV_URL);
                 const text = await res.text();
-                // Tách dòng và xử lý xóa dấu ngoặc kép bọc dữ liệu
-                db = text.split('\n').map(row => 
-                    row.split(',').map(cell => cell.replace(/^"|"$/g, '').trim())
-                );
+                
+                // CƠ CHẾ TÁCH DÒNG MỚI: Xử lý các dòng bọc trong dấu ngoặc kép
+                const rows = text.split(/\r?\n/);
+                db = rows.map(row => {
+                    // Regex này giúp tách dấu phẩy nhưng bỏ qua dấu phẩy nằm TRONG dấu ngoặc kép
+                    return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '').trim());
+                });
+
                 document.getElementById('stt').innerText = "🟢 Data Ready";
                 document.getElementById('stt').style.color = "#10b981";
             } catch (e) {
@@ -87,39 +89,27 @@
 
         document.getElementById('wfmInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                const idInput = this.value.trim();
-                if (!idInput) return;
+                const val = this.value.trim();
+                if (!val) return;
 
-                // Tìm chính xác dòng chứa ID (quét toàn bộ các ô trong mỗi dòng)
-                const f = db.find(row => row.some(cell => cell === idInput));
+                // Tìm dòng chứa ID. Tôi quét toàn bộ các cột để đảm bảo trúng dòng
+                const f = db.find(row => row.some(cell => cell === val));
 
                 if (f) {
                     audio.play();
                     
-                    /* MAPPING CỘT THEO YÊU CẦU CỦA ÔNG:
-                       f[1]  = Cột B (VENDOR / Station)
-                       f[3]  = Cột D (FULL NAME / Team)
-                       f[8]  = Cột I (USER WFM ID / Loại CTV)
-                       f[10] = Cột K (WFM EMAIL)
-                    */
-                    document.getElementById('resID').innerText = idInput;
+                    // CỘT B=f[1], D=f[3], I=f[8], K=f[10]
+                    document.getElementById('resID').innerText = val;
                     document.getElementById('resVendor').innerText = f[1] || "-";
-                    document.getElementById('resName').innerText = f[3] || "-";
+                    document.getElementById('resName').innerText   = f[3] || "-";
                     document.getElementById('resUserID').innerText = f[8] || "-";
-                    document.getElementById('resEmail').innerText = f[10] || "-";
+                    document.getElementById('resEmail').innerText  = f[10] || "-";
 
-                    const pj = document.getElementById('pj').value;
-                    const log = `<tr>
-                        <td>${new Date().toLocaleTimeString()}</td>
-                        <td>${pj}</td>
-                        <td>${idInput}</td>
-                        <td>${f[3]}</td>
-                        <td style="color:#10b981;font-weight:bold">Success</td>
-                    </tr>`;
+                    const log = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${document.getElementById('pj').value}</td><td>${val}</td><td>${f[3] || '-'}</td><td style="color:#10b981;font-weight:bold">Success</td></tr>`;
                     document.getElementById('logList').insertAdjacentHTML('afterbegin', log);
                     this.value = '';
-                } else { 
-                    alert("Không tìm thấy mã ID: " + idInput); 
+                } else {
+                    alert("Không tìm thấy mã: " + val);
                 }
             }
         });
