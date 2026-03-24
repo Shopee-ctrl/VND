@@ -2,45 +2,35 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BPO System - Final Fix</title>
+    <title>BPO System - Full Data Source</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --green: #10b981; --orange: #ff5722; --text-gray: #a3abc1; }
+        :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --orange: #ff5722; --text-gray: #a3abc1; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
         .sidebar { width: 260px; background: var(--sidebar); color: white; padding-top: 20px; flex-shrink: 0; }
-        .nav-item { padding: 15px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; margin: 5px 15px; border-radius: 12px; cursor: pointer; }
-        .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(77, 68, 255, 0.3); }
+        .nav-item { padding: 15px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); font-size: 14px; margin: 5px 15px; border-radius: 12px; cursor: pointer; }
+        .nav-item.active { background: var(--primary); color: white; }
         .nav-item i { margin-right: 15px; width: 20px; text-align: center; }
         .main-content { flex: 1; padding: 25px; overflow-y: auto; }
         .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); margin-bottom: 25px; }
         .card-title { font-weight: bold; color: #1b2559; border-left: 4px solid var(--primary); padding-left: 15px; margin-bottom: 25px; text-transform: uppercase; font-size: 16px; }
         label { display: block; font-size: 11px; font-weight: 800; color: #1b2559; margin-bottom: 8px; text-transform: uppercase; }
         input, select { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 12px; outline: none; font-size: 14px; font-weight: 600; color: #1b2559; background: white; }
-        
-        .multiselect { position: relative; width: 100%; }
-        .selectBox { position: relative; cursor: pointer; }
-        .overSelect { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
-        #checkboxes { display: none; border: 1px solid #e0e5f2; border-radius: 12px; background: white; position: absolute; width: 100%; z-index: 100; padding: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        #checkboxes label { display: flex; align-items: center; text-transform: none; font-size: 13px; font-weight: 600; padding: 8px 5px; cursor: pointer; color: #1b2559; }
-        #checkboxes input { width: auto; margin-right: 10px; }
-
-        table { width: 100%; border-collapse: collapse; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { text-align: left; padding: 12px; color: var(--text-gray); font-size: 11px; font-weight: 800; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #1b2559; font-weight: 600; }
-        .btn-search { background: var(--orange); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; height: 48px; display: flex; align-items: center; gap: 8px; }
+        .btn-search { background: var(--orange); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; height: 48px; display: flex; align-items: center; gap: 8px; margin-top: 20px; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="nav-item"><i class="fas fa-microphone"></i> Recording BPO PT</div>
         <div class="nav-item active"><i class="fas fa-wallet"></i> Total VND Request</div>
     </div>
 
     <div class="main-content">
         <div class="card">
-            <div class="card-title">FILTER DATA REQUEST</div>
-            <div style="display: flex; gap: 15px; align-items: flex-end;">
+            <div class="card-title">FILTER DATA</div>
+            <div style="display: flex; gap: 15px;">
                 <div style="flex: 1;"><label>Date</label><input type="date" id="fDate"></div>
                 <div style="flex: 1;"><label>Warehouse</label>
                     <select id="fWH">
@@ -49,40 +39,25 @@
                         <option value="VNDL">VNDL</option>
                     </select>
                 </div>
-                <div style="flex: 1.2;">
-                    <label>Team(s)</label>
-                    <div class="multiselect">
-                        <div class="selectBox" onclick="toggleCheckboxes()">
-                            <select><option id="selectedTeamText">Tất cả Team</option></select>
-                            <div class="overSelect"></div>
-                        </div>
-                        <div id="checkboxes">
-                            <label><input type="checkbox" class="team-cb" value="Inbound" checked onchange="updateTeamText()">Inbound</label>
-                            <label><input type="checkbox" class="team-cb" value="Outbound" checked onchange="updateTeamText()">Outbound</label>
-                            <label><input type="checkbox" class="team-cb" value="Inventory" checked onchange="updateTeamText()">Inventory</label>
-                            <label><input type="checkbox" class="team-cb" value="FD" checked onchange="updateTeamText()">FD</label>
-                            <label><input type="checkbox" class="team-cb" value="Return" checked onchange="updateTeamText()">Return</label>
-                        </div>
-                    </div>
-                </div>
-                <button class="btn-search" onclick="searchRequest()"><i class="fas fa-search"></i> Search</button>
+                <button class="btn-search" onclick="searchRequest()">SEARCH</button>
             </div>
         </div>
 
         <div class="card" style="padding:0;">
-            <div class="card-title" style="margin:25px 0 15px 25px;">TOTAL VND REQUEST</div>
+            <div class="card-title" style="margin:25px 0 15px 25px;">DATA SOURCE (A -> J)</div>
             <table>
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Station</th>
-                        <th>Vendor</th>
-                        <th>Team</th>
-                        <th>Task</th>
-                        <th>Bắt đầu</th>
-                        <th>Kết thúc</th>
-                        <th>Loại CTV</th>
-                        <th>Booking</th>
+                        <th>Date (A)</th>
+                        <th>Station (B)</th>
+                        <th>Vendor (C)</th>
+                        <th>Team (D)</th>
+                        <th>Task (E)</th>
+                        <th>Bắt đầu (F)</th>
+                        <th>Kết thúc (G)</th>
+                        <th>Cột H</th>
+                        <th>Loại CTV (I)</th>
+                        <th>Booking (J)</th>
                     </tr>
                 </thead>
                 <tbody id="reqBody"></tbody>
@@ -92,63 +67,57 @@
 
     <script>
         const COMMIT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=915514461&single=true&output=csv';
-        let commitDb = [], expanded = false;
-
-        function toggleCheckboxes() {
-            let cb = document.getElementById("checkboxes");
-            cb.style.display = expanded ? "none" : "block";
-            expanded = !expanded;
-        }
-
-        function updateTeamText() {
-            let checked = Array.from(document.querySelectorAll('.team-cb:checked')).map(c => c.value);
-            document.getElementById("selectedTeamText").innerText = checked.length === 0 ? "Chọn Team" : (checked.length === 5 ? "Tất cả Team" : checked.join(", "));
-        }
+        let rawData = [];
 
         async function init() {
             const resp = await fetch(COMMIT_URL);
             const text = await resp.text();
-            commitDb = text.split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+            // Xử lý CSV chuẩn hơn để không bị lệch cột khi có ô trống
+            rawData = text.split('\n').map(row => {
+                // Regex này giúp split dấu phẩy nhưng bỏ qua phẩy nằm trong ngoặc kép (nếu có)
+                return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/^"|"$/g, ''));
+            });
         }
 
         function searchRequest() {
             const dVal = document.getElementById('fDate').value;
             const whVal = document.getElementById('fWH').value;
-            const teams = Array.from(document.querySelectorAll('.team-cb:checked')).map(c => c.value);
-            
-            if (!dVal) { alert("Chọn ngày đi mày!"); return; }
-            const targetDate = dVal.split('-').reverse().join('/');
-            
-            const filtered = commitDb.slice(1).filter(r => {
-                if (r.length < 5) return false;
-                const isVND = (r[1] === "VNDL" || r[1] === "VNDB");
-                const matchDate = (r[0] === targetDate);
-                const matchWH = (whVal === "ALL" || r[1] === whVal);
-                const matchTeam = teams.includes(r[3]);
-                return isVND && matchDate && matchWH && matchTeam;
-            });
+            if (!dVal) return alert("Chọn ngày!");
 
+            const targetDate = dVal.split('-').reverse().join('/');
             const tbody = document.getElementById('reqBody');
-            tbody.innerHTML = filtered.length ? '' : '<tr><td colspan="9" style="text-align:center;">No data found</td></tr>';
-            
-            filtered.forEach(r => {
-                tbody.innerHTML += `<tr>
-                    <td>${r[0] || ''}</td>
-                    <td style="color:var(--primary); font-weight:800">${r[1] || ''}</td>
-                    <td>${r[2] || ''}</td>
-                    <td>${r[3] || ''}</td>
-                    <td>${r[4] || ''}</td>
-                    <td style="color:var(--primary)">${r[5] || ''}</td>
-                    <td style="color:#f56565">${r[6] || ''}</td>
-                    <td>${r[8] || ''}</td>
-                    <td style="font-weight:800; color:#1b2559;">${r[9] || '0'}</td>
-                </tr>`;
-            });
-            if(expanded) toggleCheckboxes();
+            tbody.innerHTML = '';
+
+            // Duyệt từ dòng 2 (bỏ header)
+            for (let i = 1; i < rawData.length; i++) {
+                let r = rawData[i];
+                if (r.length < 5) continue;
+
+                const matchDate = r[0] === targetDate;
+                const isVND = (r[1] === "VNDL" || r[1] === "VNDB");
+                const matchWH = (whVal === "ALL" || r[1] === whVal);
+
+                if (matchDate && isVND && matchWH) {
+                    let tr = document.createElement('tr');
+                    // Đổ đúng thứ tự r[0] đến r[9] tương ứng A đến J
+                    tr.innerHTML = `
+                        <td>${r[0] || ''}</td>
+                        <td style="color:var(--primary)">${r[1] || ''}</td>
+                        <td>${r[2] || ''}</td>
+                        <td>${r[3] || ''}</td>
+                        <td>${r[4] || ''}</td>
+                        <td>${r[5] || ''}</td>
+                        <td>${r[6] || ''}</td>
+                        <td>${r[7] || ''}</td>
+                        <td>${r[8] || ''}</td>
+                        <td style="font-weight:bold; color:black;">${r[9] || '0'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            }
         }
 
         window.onload = init;
-        window.onclick = function(e) { if (!e.target.closest('.multiselect') && expanded) toggleCheckboxes(); }
     </script>
 </body>
 </html>
