@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BPO Recording System</title>
+    <title>BPO System - Final Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --green: #10b981; --orange: #ff5722; --text-gray: #a3abc1; }
@@ -17,34 +17,93 @@
         .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); margin-bottom: 25px; }
         .card-title { font-weight: bold; color: #1b2559; border-left: 4px solid var(--primary); padding-left: 15px; margin-bottom: 25px; text-transform: uppercase; font-size: 16px; }
         label { display: block; font-size: 11px; font-weight: 800; color: #1b2559; margin-bottom: 8px; text-transform: uppercase; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 12px; outline: none; font-size: 14px; font-weight: 600; color: #1b2559; background: white; }
-        
-        /* Dropdown Team Xịn */
+        input, select { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 12px; outline: none; font-size: 14px; font-weight: 600; color: #1b2559; }
+
+        /* RECORDING UI */
+        .scan-toggle { display: flex; gap: 10px; margin-bottom: 20px; background: #f4f7fe; padding: 5px; border-radius: 12px; }
+        .btn-scan { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--text-gray); background: transparent; }
+        .btn-scan.active { background: white; color: var(--green); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .radio-group { display: flex; gap: 15px; align-items: center; height: 48px; }
+        .radio-group label { display: flex; align-items: center; gap: 8px; text-transform: none; margin-bottom: 0; cursor: pointer; }
+        .radio-group input { width: auto; }
+        .info-box { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #f1f5f9; }
+        .info-val { font-size: 14px; font-weight: 800; color: #1b2559; margin-top: 5px; }
+        .status-tag { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; background: #e6fffa; color: #065f46; }
+
+        /* REQUEST UI (ĐỂ NGUYÊN) */
         .multiselect { position: relative; width: 100%; }
         .selectBox { position: relative; cursor: pointer; }
         .overSelect { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
         #checkboxes { display: none; border: 1px solid #e0e5f2; border-radius: 12px; background: white; position: absolute; width: 100%; z-index: 100; padding: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        #checkboxes label { display: flex; align-items: center; text-transform: none; font-size: 13px; font-weight: 600; padding: 8px 5px; cursor: pointer; color: #1b2559; }
-        #checkboxes input { width: auto; margin-right: 10px; }
+        #checkboxes label { display: flex !important; align-items: center !important; text-transform: none !important; font-size: 13px !important; border: none !important; padding: 8px 5px !important; }
+        #checkboxes input { width: auto !important; margin-right: 10px !important; }
 
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 15px; color: var(--text-gray); font-size: 11px; font-weight: 800; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 15px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #1b2559; font-weight: 600; }
-        .btn-search { background: var(--orange); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; height: 48px; display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .btn-search { background: var(--orange); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; height: 48px; display: flex; align-items: center; gap: 8px; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="nav-item" id="m-recording" onclick="switchTab('recording')"><i class="fas fa-microphone"></i> Recording BPO PT</div>
-        <div class="nav-item active" id="m-request" onclick="switchTab('request')"><i class="fas fa-wallet"></i> Total VND Request</div>
+        <div class="nav-item active" id="m-recording" onclick="switchTab('recording')"><i class="fas fa-microphone"></i> Recording BPO PT</div>
+        <div class="nav-item" id="m-request" onclick="switchTab('request')"><i class="fas fa-wallet"></i> Total VND Request</div>
         <div class="nav-item"><i class="fas fa-chart-line"></i> Fill rate</div>
     </div>
 
-    <div id="recording" class="main-content">
-        <div class="card"><div class="card-title">RECORDING (COMING SOON)</div></div>
+    <div id="recording" class="main-content active">
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 25px;">
+            <div class="card">
+                <div class="card-title">INPUT WFM ID</div>
+                <div class="scan-toggle">
+                    <button class="btn-scan active" id="btnIn" onclick="setScan('IN')"><i class="fas fa-sign-in-alt"></i> SCAN IN</button>
+                    <button class="btn-scan" id="btnOut" onclick="setScan('OUT')"><i class="fas fa-sign-out-alt"></i> SCAN OUT</button>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-bottom: 20px;">
+                    <div><label>Project Code</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="pCode" value="VNDB" checked> VNDB</label>
+                            <label><input type="radio" name="pCode" value="VNDL"> VNDL</label>
+                        </div>
+                    </div>
+                    <div><label>Time</label><select id="recTime"></select></div>
+                    <div><label>Shift</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="pShift" value="Day" checked> Day</label>
+                            <label><input type="radio" name="pShift" value="Night"> Night</label>
+                        </div>
+                    </div>
+                </div>
+                <label>BPO Staff ID (WFM ID)</label>
+                <input type="text" id="wfmInput" placeholder="Input WFM, please..." style="margin-bottom: 20px;">
+                <button class="btn-search" style="width:100%; justify-content:center; background:var(--primary);">CONFIRM</button>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">BPO PT INFORMATION</div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 15px;">
+                    <div class="info-box"><label>VENDOR</label><div class="info-val" id="v_vendor">Agari</div></div>
+                    <div class="info-box"><label>FULL NAME</label><div class="info-val" id="v_name">NGUYỄN THỊ THẢO</div></div>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 15px;">
+                    <div class="info-box"><label>WFM ID</label><div class="info-val">S098192</div></div>
+                    <div class="info-box"><label>USER WFM ID</label><div class="info-val">466112</div></div>
+                </div>
+                <div class="info-box"><label>WFM EMAIL</label><div class="info-val">danang_pt_agari8@wms-vn-bpo.com</div></div>
+            </div>
+        </div>
+        <div class="card" style="padding:0;">
+            <div class="card-title" style="margin:25px 0 15px 25px;">DATA ENTRY</div>
+            <table>
+                <thead><tr><th>Scanned At</th><th>Warehouse</th><th>WFM ID</th><th>Full name</th><th>Scan Type</th><th>Status</th></tr></thead>
+                <tbody>
+                    <tr><td>13:19 - 24/3/2026</td><td style="color:var(--primary); font-weight:800;">VNDB</td><td>S098192</td><td>NGUYỄN THỊ THẢO</td><td><span class="status-tag" style="background:#e6fffa; color:#065f46;">IN</span></td><td><span style="color:var(--green)">Thành công</span></td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <div id="request" class="main-content active">
+    <div id="request" class="main-content">
         <div class="card">
             <div class="card-title">FILTER DATA REQUEST</div>
             <div style="display: flex; gap: 20px; align-items: flex-end;">
@@ -79,10 +138,7 @@
             <div class="card-title" style="margin:25px 0 15px 25px;">TOTAL VND REQUEST</div>
             <table>
                 <thead>
-                    <tr>
-                        <th>Date</th><th>Station</th><th>Vendor</th><th>Team</th><th>Task</th>
-                        <th>Bắt đầu</th><th>Kết thúc</th><th>Loại CTV</th><th>Booking</th>
-                    </tr>
+                    <tr><th>Date</th><th>Station</th><th>Vendor</th><th>Team</th><th>Task</th><th>Bắt đầu</th><th>Kết thúc</th><th>Loại CTV</th><th>Booking</th></tr>
                 </thead>
                 <tbody id="reqBody"></tbody>
             </table>
@@ -100,6 +156,11 @@
             document.getElementById('m-'+t).classList.add('active');
         }
 
+        function setScan(m) {
+            document.getElementById('btnIn').classList.toggle('active', m==='IN');
+            document.getElementById('btnOut').classList.toggle('active', m==='OUT');
+        }
+
         function toggleCheckboxes() {
             let cb = document.getElementById("checkboxes");
             cb.style.display = expanded ? "none" : "block";
@@ -114,41 +175,34 @@
         async function init() {
             const resp = await fetch(COMMIT_URL);
             const text = await resp.text();
-            // CHỖ NÀY QUAN TRỌNG: Dùng Regex để split đúng cột J dù có ô trống
             commitDb = text.split('\n').map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/^"|"$/g, '')));
+            
+            const sel = document.getElementById('recTime');
+            for(let i=0; i<48; i++) {
+                let h = Math.floor(i/2).toString().padStart(2,'0'), m = (i%2==0?'00':'30');
+                sel.add(new Option(`${h}:${m}`, `${h}:${m}`));
+            }
         }
 
         function searchRequest() {
             const dVal = document.getElementById('fDate').value;
             const whVal = document.getElementById('fWH').value;
             const teams = Array.from(document.querySelectorAll('.team-cb:checked')).map(c => c.value);
-            
             if (!dVal) return alert("Chọn ngày!");
             const targetDate = dVal.split('-').reverse().join('/');
             
-            // Lọc dữ liệu
             const filtered = commitDb.slice(1).filter(r => {
-                const matchDate = (r[0] === targetDate);
-                const isVND = (r[1] === "VNDL" || r[1] === "VNDB");
-                const matchWH = (whVal === "ALL" || r[1] === whVal);
-                const matchTeam = teams.includes(r[3]);
-                return matchDate && isVND && matchWH && matchTeam;
+                return r[0] === targetDate && (whVal === "ALL" || r[1] === whVal) && teams.includes(r[3]);
             });
 
             const tbody = document.getElementById('reqBody');
-            tbody.innerHTML = filtered.length ? '' : '<tr><td colspan="9" style="text-align:center;">Không có dữ liệu</td></tr>';
-            
+            tbody.innerHTML = '';
             filtered.forEach(r => {
-                // Đổ đúng dữ liệu A->J
                 tbody.innerHTML += `<tr>
-                    <td>${r[0]}</td>
-                    <td style="color:var(--primary); font-weight:800">${r[1]}</td>
-                    <td>${r[2]}</td>
-                    <td>${r[3]}</td>
-                    <td>${r[4]}</td>
-                    <td>${r[5]}</td>
-                    <td>${r[6]}</td>
-                    <td>${r[8]}</td> <td style="font-weight:800; color:#1b2559;">${r[9] || '0'}</td> </tr>`;
+                    <td>${r[0]}</td><td style="color:var(--primary); font-weight:800">${r[1]}</td>
+                    <td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td>
+                    <td>${r[8] || ''}</td><td style="font-weight:800;">${r[9] || '0'}</td>
+                </tr>`;
             });
             if(expanded) toggleCheckboxes();
         }
