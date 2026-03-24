@@ -6,42 +6,54 @@
     <title>BPO Recording System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --sidebar: #1a1c3d; --bg: #f4f7fe; --blue: #4d44ff; }
+        :root { --sidebar: #1a1c3d; --bg: #f4f7fe; --blue: #4d44ff; --green: #10b981; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar giữ nguyên giao diện cũ */
         .sidebar { width: 260px; background: #1a1c3d; color: white; padding-top: 20px; flex-shrink: 0; }
-        .nav-item { padding: 15px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; margin: 5px 15px; border-radius: 8px; }
+        .nav-item { padding: 15px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; margin: 5px 15px; border-radius: 8px; cursor: pointer; }
         .nav-item.active { background: var(--blue); color: white; }
         .nav-item i { margin-right: 15px; width: 20px; text-align: center; }
-        .main { flex: 1; padding: 25px; overflow-y: auto; }
+
+        .main { flex: 1; padding: 25px; overflow-y: auto; display: none; }
+        .main.active { display: block; }
+        
+        /* Card & Layout */
         .container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
         .card { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); position: relative; }
         .card-title { font-weight: bold; color: #1a1c3d; border-left: 4px solid var(--blue); padding-left: 15px; margin-bottom: 25px; text-transform: uppercase; font-size: 16px; }
+        
+        /* Scan Buttons */
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .btn-scan { padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; color: #a0aec0; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
-        .btn-scan.active { background: #f0fdf4; border-color: #d1fae5; color: #10b981; }
-        .btn-confirm { width: 100%; padding: 15px; border: none; border-radius: 10px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 15px; box-shadow: 0 4px 15px rgba(77, 68, 255, 0.3); }
+        .btn-scan.active { background: #f0fdf4; border-color: #d1fae5; color: var(--green); }
+        .btn-confirm { width: 100%; padding: 15px; border: none; border-radius: 10px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 15px; }
+        
+        /* Inputs */
         .grid-inputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         label { display: block; font-size: 11px; font-weight: bold; color: #1a1c3d; margin-bottom: 8px; text-transform: uppercase; }
         .info-box { background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; min-height: 20px; font-size: 13px; color: #333; font-weight: 600; }
-        input[type="text"], select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; outline: none; box-sizing: border-box; font-size: 14px; }
-        input[type="text"]:focus { border-color: var(--blue); }
-        .radio-group { display: flex; gap: 15px; font-size: 12px; align-items: center; font-weight: 600; padding: 5px 0; }
+        input[type="text"], input[type="date"], select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; outline: none; box-sizing: border-box; font-size: 14px; }
+        .radio-group { display: flex; gap: 10px; font-size: 12px; align-items: center; font-weight: 600; }
+
+        /* Table */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { text-align: left; padding: 15px; color: #a0aec0; font-size: 11px; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 15px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #4a5568; }
-        .tag-in { background: #f0fdf4; color: #10b981; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 10px; }
+        .tag-in { background: #f0fdf4; color: var(--green); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 10px; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <a href="#" class="nav-item active"><i class="fas fa-microphone"></i> Recording BPO PT</a>
-        <a href="#" class="nav-item"><i class="fas fa-wallet"></i> Total VND Request</a>
-        <a href="#" class="nav-item"><i class="fas fa-chart-line"></i> Fill rate</a>
+        <div class="nav-item active" onclick="showPage('recording')"><i class="fas fa-microphone"></i> Recording BPO PT</div>
+        <div class="nav-item" onclick="showPage('request')"><i class="fas fa-wallet"></i> Total VND Request</div>
+        <div class="nav-item"><i class="fas fa-chart-line"></i> Fill rate</div>
     </div>
-    <div class="main">
+
+    <div id="recording" class="main active">
         <div class="container">
             <div class="card">
-                <div class="card-title">INPUT WFM ID <span id="stt" style="color:#10b981; font-size: 10px; margin-left:10px;">🟢 Data Ready</span></div>
+                <div class="card-title">INPUT WFM ID <span id="stt" style="color:var(--green); font-size: 10px; margin-left:10px;">🟢 Data Ready</span></div>
                 <div class="btn-group">
                     <div class="btn-scan active" id="btnIn"><i class="fas fa-sign-in"></i> SCAN IN</div>
                     <div class="btn-scan" id="btnOut"><i class="fas fa-sign-out-alt"></i> SCAN OUT</div>
@@ -50,15 +62,15 @@
                 <div class="grid-inputs">
                     <div><label>Project Code</label>
                         <div class="radio-group">
-                            <label style="margin:0;"><input type="radio" name="pj" value="VNDB" checked> VNDB</label>
-                            <label style="margin:0;"><input type="radio" name="pj" value="VNDL"> VNDL</label>
+                            <label><input type="radio" name="pj" value="VNDB" checked> VNDB</label>
+                            <label><input type="radio" name="pj" value="VNDL"> VNDL</label>
                         </div>
                     </div>
                     <div><label>Time</label><select id="timeSelect"></select></div>
                     <div><label>Shift</label>
                         <div class="radio-group">
-                            <label style="margin:0;"><input type="radio" name="sh" value="Day" checked> Day</label>
-                            <label style="margin:0;"><input type="radio" name="sh" value="Night"> Night</label>
+                            <label><input type="radio" name="sh" value="Day" checked> Day</label>
+                            <label><input type="radio" name="sh" value="Night"> Night</label>
                         </div>
                     </div>
                 </div>
@@ -66,9 +78,9 @@
                 <div style="margin-bottom: 20px; padding: 10px; background: #f8fafc; border-radius: 10px;">
                     <label>Team Selection</label>
                     <div class="radio-group">
-                        <label style="margin:0;"><input type="radio" name="team" value="Inbound" checked> Inbound</label>
-                        <label style="margin:0; margin-left:10px;"><input type="radio" name="team" value="Inventory"> Inventory</label>
-                        <label style="margin:0; margin-left:10px;"><input type="radio" name="team" value="FD"> FD</label>
+                        <label><input type="radio" name="team" value="Inbound" checked> Inbound</label>
+                        <label><input type="radio" name="team" value="Inventory"> Inventory</label>
+                        <label><input type="radio" name="team" value="FD"> FD</label>
                     </div>
                 </div>
 
@@ -101,11 +113,49 @@
                         <th>Vendor</th>
                         <th>WFM ID</th>
                         <th>Full name</th>
-                        <th>Scan Type</th>
+                        <th>Type</th>
                         <th>Status</th>
                     </tr>
                 </thead>
                 <tbody id="logList"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="request" class="main">
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="card-title">FILTER DATA REQUEST</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                <div><label>Filter by Date</label><input type="date" id="filterDate" onchange="filterRequest()"></div>
+                <div><label>Warehouse</label>
+                    <select id="filterWH" onchange="filterRequest()">
+                        <option value="ALL">All Warehouse</option>
+                        <option value="VNDB">VNDB</option>
+                        <option value="VNDL">VNDL</option>
+                    </select>
+                </div>
+                <div><label>Team</label>
+                    <select id="filterTeam" onchange="filterRequest()">
+                        <option value="ALL">All Teams</option>
+                        <option value="Inbound">Inbound</option>
+                        <option value="Inventory">Inventory</option>
+                        <option value="FD">FD</option>
+                        <option value="Return">Return</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="padding:0;">
+            <div class="card-title" style="margin:25px 0 0 25px;">TOTAL VND REQUEST</div>
+            <table>
+                <thead>
+                    <tr><th>Date</th><th>Station</th><th>Vendor</th><th>Team</th><th>Task</th><th>Bắt đầu</th><th>Kết thúc</th><th>Booking</th></tr>
+                </thead>
+                <tbody id="requestTableBody">
+                    <tr><td>17/03/2026</td><td>VNDL</td><td>SKT</td><td>Return</td><td>Put</td><td>9:30</td><td>18:30</td><td>1.1</td></tr>
+                    <tr><td>17/03/2026</td><td>VNDL</td><td>SKT</td><td>Inventory</td><td>Cycle Count</td><td>9:30</td><td>18:30</td><td>2.2</td></tr>
+                </tbody>
             </table>
         </div>
     </div>
@@ -116,15 +166,20 @@
         let scanMode = "IN";
         const audioSuccess = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
 
-        // Tạo danh sách giờ cách nhau 30 phút
+        function showPage(pageId) {
+            document.querySelectorAll('.main').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
         function populateTime() {
             const select = document.getElementById('timeSelect');
             for (let h = 0; h < 24; h++) {
                 for (let m = 0; m < 60; m += 30) {
                     let time = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
                     let opt = document.createElement('option');
-                    opt.value = time;
-                    opt.innerHTML = time;
+                    opt.value = time; opt.innerHTML = time;
                     if(time === "09:00") opt.selected = true;
                     select.appendChild(opt);
                 }
@@ -145,38 +200,45 @@
         function handleConfirm() {
             const val = document.getElementById('wfmInput').value.trim();
             if (!val) return;
-            const f = db.find(row => row[8] === val); // Tra cứu cột I
+            const f = db.find(row => row[8] === val); // Tra cứu cột I (Mã WFM)
 
             if (f) {
                 audioSuccess.play();
                 const vendor = f[1] || "-";
                 const name = f[3] || "-";
-                
                 document.getElementById('resVendor').innerText = vendor;
-                document.getElementById('resName').innerText   = name;
-                document.getElementById('resID').innerText     = f[8] || "-";
+                document.getElementById('resName').innerText = name;
+                document.getElementById('resID').innerText = f[8] || "-";
                 document.getElementById('resUserID').innerText = f[9] || "-";
-                document.getElementById('resEmail').innerText  = f[10] || "-";
+                document.getElementById('resEmail').innerText = f[10] || "-";
 
-                const pj = document.querySelector('input[name="pj"]:checked').value;
-                const team = document.querySelector('input[name="team"]:checked').value;
-                const selectedTime = document.getElementById('timeSelect').value;
-
-                // Thêm Team và Vendor vào bảng Log
                 const log = `<tr>
-                    <td>${selectedTime}</td>
-                    <td style="color:var(--blue); font-weight:bold;">${pj}</td>
-                    <td>${team}</td>
+                    <td>${document.getElementById('timeSelect').value}</td>
+                    <td style="color:var(--blue); font-weight:bold;">${document.querySelector('input[name="pj"]:checked').value}</td>
+                    <td>${document.querySelector('input[name="team"]:checked').value}</td>
                     <td>${vendor}</td>
                     <td>${val}</td>
                     <td>${name}</td>
                     <td><span class="tag-in" style="${scanMode === 'OUT' ? 'background:#fee2e2;color:#ef4444;' : ''}">${scanMode}</span></td>
-                    <td style="color:#10b981; font-weight:bold;">Thành công</td>
+                    <td style="color:var(--green); font-weight:bold;">Thành công</td>
                 </tr>`;
                 document.getElementById('logList').insertAdjacentHTML('afterbegin', log);
                 document.getElementById('wfmInput').value = '';
                 document.getElementById('wfmInput').focus();
-            } else { alert("Không tìm thấy nhân sự!"); }
+            } else { alert("Không tìm thấy!"); }
+        }
+
+        function filterRequest() {
+            const dVal = document.getElementById('filterDate').value;
+            const whVal = document.getElementById('filterWH').value;
+            const tVal = document.getElementById('filterTeam').value;
+            document.querySelectorAll('#requestTableBody tr').forEach(row => {
+                let show = true;
+                if (dVal && !row.cells[0].innerText.includes(dVal.split('-').reverse().join('/'))) show = false;
+                if (whVal !== "ALL" && row.cells[1].innerText !== whVal) show = false;
+                if (tVal !== "ALL" && row.cells[3].innerText !== tVal) show = false;
+                row.style.display = show ? "" : "none";
+            });
         }
 
         document.getElementById('wfmInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') handleConfirm(); });
