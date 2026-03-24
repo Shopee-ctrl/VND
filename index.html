@@ -3,59 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BPO Recording System - Fix Booking</title>
+    <title>BPO System - Final Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --green: #10b981; --orange: #ff5722; --text-gray: #a3abc1; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
         .sidebar { width: 260px; background: var(--sidebar); color: white; padding-top: 20px; flex-shrink: 0; }
-        .nav-item { padding: 15px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; margin: 5px 15px; border-radius: 12px; cursor: pointer; transition: 0.3s; }
+        .nav-item { padding: 15px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; margin: 5px 15px; border-radius: 12px; cursor: pointer; }
         .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(77, 68, 255, 0.3); }
         .nav-item i { margin-right: 15px; width: 20px; text-align: center; }
-        .main-content { flex: 1; padding: 25px; overflow-y: auto; display: none; }
-        .main-content.active { display: block; }
-        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); position: relative; margin-bottom: 25px; }
+        .main-content { flex: 1; padding: 25px; overflow-y: auto; }
+        .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); margin-bottom: 25px; }
         .card-title { font-weight: bold; color: #1b2559; border-left: 4px solid var(--primary); padding-left: 15px; margin-bottom: 25px; text-transform: uppercase; font-size: 16px; }
         label { display: block; font-size: 11px; font-weight: 800; color: #1b2559; margin-bottom: 8px; text-transform: uppercase; }
         input, select { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 12px; outline: none; font-size: 14px; font-weight: 600; color: #1b2559; background: white; }
+        
         .multiselect { position: relative; width: 100%; }
         .selectBox { position: relative; cursor: pointer; }
         .overSelect { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
         #checkboxes { display: none; border: 1px solid #e0e5f2; border-radius: 12px; background: white; position: absolute; width: 100%; z-index: 100; padding: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         #checkboxes label { display: flex; align-items: center; text-transform: none; font-size: 13px; font-weight: 600; padding: 8px 5px; cursor: pointer; color: #1b2559; }
         #checkboxes input { width: auto; margin-right: 10px; }
+
         table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 15px; color: var(--text-gray); font-size: 11px; font-weight: 800; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
-        td { padding: 15px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #1b2559; font-weight: 600; }
-        .btn-search { background: var(--orange); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; height: 48px; display: flex; align-items: center; gap: 8px; font-size: 14px; }
-        .tag-wh { color: var(--primary); font-weight: 800; }
+        th { text-align: left; padding: 12px; color: var(--text-gray); font-size: 11px; font-weight: 800; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #1b2559; font-weight: 600; }
+        .btn-search { background: var(--orange); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; height: 48px; display: flex; align-items: center; gap: 8px; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="nav-item" onclick="switchTab('recording')"><i class="fas fa-microphone"></i> Recording BPO PT</div>
-        <div class="nav-item active" id="m-request" onclick="switchTab('request')"><i class="fas fa-wallet"></i> Total VND Request</div>
-        <div class="nav-item"><i class="fas fa-chart-line"></i> Fill rate</div>
+        <div class="nav-item"><i class="fas fa-microphone"></i> Recording BPO PT</div>
+        <div class="nav-item active"><i class="fas fa-wallet"></i> Total VND Request</div>
     </div>
 
-    <div id="recording" class="main-content">
-        <div class="card"><div class="card-title">RECORDING (COMING SOON)</div></div>
-    </div>
-
-    <div id="request" class="main-content active">
+    <div class="main-content">
         <div class="card">
             <div class="card-title">FILTER DATA REQUEST</div>
-            <div style="display: flex; gap: 20px; align-items: flex-end;">
-                <div style="flex: 1;"><label>Filter by Date</label><input type="date" id="fDate"></div>
+            <div style="display: flex; gap: 15px; align-items: flex-end;">
+                <div style="flex: 1;"><label>Date</label><input type="date" id="fDate"></div>
                 <div style="flex: 1;"><label>Warehouse</label>
                     <select id="fWH">
-                        <option value="ALL">VNDB & VNDL (Tất cả)</option>
+                        <option value="ALL">VNDB & VNDL</option>
                         <option value="VNDB">VNDB</option>
                         <option value="VNDL">VNDL</option>
                     </select>
                 </div>
                 <div style="flex: 1.2;">
-                    <label>Select Team(s)</label>
+                    <label>Team(s)</label>
                     <div class="multiselect">
                         <div class="selectBox" onclick="toggleCheckboxes()">
                             <select><option id="selectedTeamText">Tất cả Team</option></select>
@@ -73,10 +68,23 @@
                 <button class="btn-search" onclick="searchRequest()"><i class="fas fa-search"></i> Search</button>
             </div>
         </div>
+
         <div class="card" style="padding:0;">
             <div class="card-title" style="margin:25px 0 15px 25px;">TOTAL VND REQUEST</div>
             <table>
-                <thead><tr><th>Date</th><th>Station</th><th>Vendor</th><th>Team</th><th>Task</th><th>Bắt đầu</th><th>Kết thúc</th><th>Booking</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Station</th>
+                        <th>Vendor</th>
+                        <th>Team</th>
+                        <th>Task</th>
+                        <th>Bắt đầu</th>
+                        <th>Kết thúc</th>
+                        <th>Loại CTV</th>
+                        <th>Booking</th>
+                    </tr>
+                </thead>
                 <tbody id="reqBody"></tbody>
             </table>
         </div>
@@ -86,12 +94,6 @@
         const COMMIT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=915514461&single=true&output=csv';
         let commitDb = [], expanded = false;
 
-        function switchTab(t) {
-            document.querySelectorAll('.main-content').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById(t).classList.add('active');
-        }
-
         function toggleCheckboxes() {
             let cb = document.getElementById("checkboxes");
             cb.style.display = expanded ? "none" : "block";
@@ -100,7 +102,7 @@
 
         function updateTeamText() {
             let checked = Array.from(document.querySelectorAll('.team-cb:checked')).map(c => c.value);
-            document.getElementById("selectedTeamText").innerText = checked.length === 0 ? "Chưa chọn" : (checked.length === 5 ? "Tất cả Team" : checked.join(", "));
+            document.getElementById("selectedTeamText").innerText = checked.length === 0 ? "Chọn Team" : (checked.length === 5 ? "Tất cả Team" : checked.join(", "));
         }
 
         async function init() {
@@ -112,36 +114,34 @@
         function searchRequest() {
             const dVal = document.getElementById('fDate').value;
             const whVal = document.getElementById('fWH').value;
-            const selectedTeams = Array.from(document.querySelectorAll('.team-cb:checked')).map(c => c.value);
+            const teams = Array.from(document.querySelectorAll('.team-cb:checked')).map(c => c.value);
             
-            if (!dVal) { alert("Vui lòng chọn ngày!"); return; }
+            if (!dVal) { alert("Chọn ngày đi mày!"); return; }
             const targetDate = dVal.split('-').reverse().join('/');
             
-            // LỌC DATA
             const filtered = commitDb.slice(1).filter(r => {
-                const isVND = (r[1] === "VNDL" || r[1] === "VNDB"); // Cột B
-                const matchDate = (r[0] === targetDate);            // Cột A
+                if (r.length < 5) return false;
+                const isVND = (r[1] === "VNDL" || r[1] === "VNDB");
+                const matchDate = (r[0] === targetDate);
                 const matchWH = (whVal === "ALL" || r[1] === whVal);
-                const matchTeam = selectedTeams.includes(r[3]);     // Cột D
+                const matchTeam = teams.includes(r[3]);
                 return isVND && matchDate && matchWH && matchTeam;
             });
 
             const tbody = document.getElementById('reqBody');
-            tbody.innerHTML = filtered.length ? '' : '<tr><td colspan="8" style="text-align:center;">Không có dữ liệu</td></tr>';
+            tbody.innerHTML = filtered.length ? '' : '<tr><td colspan="9" style="text-align:center;">No data found</td></tr>';
             
             filtered.forEach(r => {
-                // FIX LỖI: Lấy Booking ở cột J (index 9) theo hình mày gửi
-                const bookingValue = r[9] || '0'; 
-                
                 tbody.innerHTML += `<tr>
-                    <td>${r[0]}</td>
-                    <td class="tag-wh">${r[1]}</td>
-                    <td>${r[2]}</td>
-                    <td>${r[3]}</td>
-                    <td>${r[4]}</td>
-                    <td style="color:var(--primary)">${r[5]}</td>
-                    <td style="color:#f56565">${r[6]}</td>
-                    <td style="font-weight:800; color:#1b2559;">${bookingValue}</td>
+                    <td>${r[0] || ''}</td>
+                    <td style="color:var(--primary); font-weight:800">${r[1] || ''}</td>
+                    <td>${r[2] || ''}</td>
+                    <td>${r[3] || ''}</td>
+                    <td>${r[4] || ''}</td>
+                    <td style="color:var(--primary)">${r[5] || ''}</td>
+                    <td style="color:#f56565">${r[6] || ''}</td>
+                    <td>${r[8] || ''}</td>
+                    <td style="font-weight:800; color:#1b2559;">${r[9] || '0'}</td>
                 </tr>`;
             });
             if(expanded) toggleCheckboxes();
