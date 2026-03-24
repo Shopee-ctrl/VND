@@ -1,113 +1,229 @@
 <!DOCTYPE html>
+
 <html lang="vi">
+
 <head>
+
     <meta charset="UTF-8">
+
     <title>BPO System - Final Stable</title>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
-        :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --green: #10b981; --text-gray: #a3abc1; --orange: #ff5722; }
+
+        :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --green: #10b981; --text-gray: #a3abc1; }
+
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
+
         .sidebar { width: 260px; background: var(--sidebar); color: white; padding-top: 20px; flex-shrink: 0; }
+
         .nav-item { padding: 15px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; margin: 5px 15px; border-radius: 12px; cursor: pointer; }
+
         .nav-item.active { background: var(--primary); color: white; }
+
         .nav-item i { margin-right: 15px; width: 20px; text-align: center; }
-        
-        .main-content { flex: 1; padding: 25px; overflow-y: auto; display: none; }
-        .main-content.active { display: block; }
+
+        .main-content { flex: 1; padding: 25px; overflow-y: auto; }
 
         .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); margin-bottom: 25px; position: relative; }
+
         .card-title { font-weight: bold; color: #1b2559; border-left: 4px solid var(--primary); padding-left: 15px; margin-bottom: 25px; text-transform: uppercase; font-size: 14px; }
+
         label { display: block; font-size: 11px; font-weight: 800; color: #1b2559; margin-bottom: 8px; text-transform: uppercase; }
+
         input, select { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 12px; outline: none; font-size: 14px; font-weight: 600; color: #1b2559; box-sizing: border-box; }
+
         .info-box { background: #f8fafc; padding: 12px 15px; border-radius: 12px; border: 1px solid #f1f5f9; min-height: 45px; }
+
         .info-val { font-size: 14px; font-weight: 800; color: #1b2559; margin-top: 4px; }
+
         .btn-confirm { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; text-transform: uppercase; }
-        .btn-search { background: var(--orange); color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; height: 45px; }
 
         .scan-tabs { display: flex; gap: 10px; margin-bottom: 20px; background: #f4f7fe; padding: 5px; border-radius: 12px; }
+
         .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: var(--text-gray); background: transparent; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
         .tab-btn.active { background: white; color: var(--green); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+
         th { text-align: left; padding: 15px; color: var(--text-gray); font-size: 11px; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
+
         td { padding: 15px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #1b2559; font-weight: 600; }
+
+        .status-tag { padding: 4px 10px; border-radius: 8px; font-size: 11px; background: #e6fffa; color: #10b981; }
+
     </style>
+
 </head>
+
 <body>
+
     <div class="sidebar">
-        <div class="nav-item active" id="menu-rec" onclick="switchTab('recording')"><i class="fas fa-microphone"></i> Recording BPO PT</div>
-        <div class="nav-item" id="menu-req" onclick="switchTab('request')"><i class="fas fa-wallet"></i> Total VND Request</div>
+
+        <div class="nav-item active"><i class="fas fa-microphone"></i> Recording BPO PT</div>
+
+        <div class="nav-item"><i class="fas fa-wallet"></i> Total VND Request</div>
+
     </div>
 
-    <div id="recording" class="main-content active">
+
+
+    <div class="main-content">
+
         <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 25px;">
+
             <div class="card">
+
                 <div id="status-text" style="position:absolute; top:15px; right:25px; font-size:10px; color:green; font-weight:bold;">Data Ready</div>
+
                 <div class="card-title">INPUT WFM ID</div>
+
                 <div class="scan-tabs">
+
                     <button class="tab-btn active"><i class="fas fa-sign-in-alt"></i> SCAN IN</button>
+
                     <button class="tab-btn" style="opacity:0.5;"><i class="fas fa-sign-out-alt"></i> SCAN OUT</button>
+
                 </div>
+
                 <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-bottom: 20px;">
+
                     <div><label>Project Code</label><select><option>VNDB</option><option>VNDL</option></select></div>
+
                     <div><label>Time</label><select id="recTime"></select></div>
+
                     <div><label>Shift</label><select><option>Day</option><option>Night</option></select></div>
+
                 </div>
+
                 <label>BPO Staff ID (WFM ID)</label>
+
                 <input type="text" id="wfmInput" placeholder="Input WFM, please..." autocomplete="off">
+
                 <button class="btn-confirm">CONFIRM</button>
+
             </div>
+
             
+
             <div class="card">
+
                 <div class="card-title">BPO PT INFORMATION</div>
+
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 15px;">
+
                     <div class="info-box"><label>VENDOR</label><div class="info-val" id="res_vendor">-</div></div>
+
                     <div class="info-box"><label>FULL NAME</label><div class="info-val" id="res_name">-</div></div>
+
                 </div>
+
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 15px;">
+
                     <div class="info-box"><label>WFM ID</label><div class="info-val" id="res_id">-</div></div>
+
                     <div class="info-box"><label>USER WFM ID</label><div class="info-val" id="res_user">-</div></div>
+
                 </div>
+
                 <div class="info-box"><label>WFM EMAIL</label><div class="info-val" id="res_email">-</div></div>
+
             </div>
+
         </div>
 
+
+
         <div class="card" style="padding:0;">
+
             <div class="card-title" style="margin:25px 0 15px 25px;">DATA ENTRY</div>
+
             <table>
+
                 <thead><tr><th>Scanned At</th><th>Warehouse</th><th>WFM ID</th><th>Full name</th><th>Scan Type</th><th>Status</th></tr></thead>
+
                 <tbody id="historyBody">
+
                     <tr><td colspan="6" style="text-align:center; color:var(--text-gray); padding:30px;">No records yet</td></tr>
+
                 </tbody>
+
             </table>
+
         </div>
+
     </div>
 
-    <div id="request" class="main-content">
-        <div class="card">
-            <div class="card-title">FILTER DATA REQUEST</div>
-            <div style="display: flex; gap: 20px; align-items: flex-end;">
-                <div style="flex: 1;"><label>Filter by Date</label><input type="date" id="filterDate"></div>
-                <div style="flex: 1;"><label>Warehouse</label>
-                    <select id="filterWH">
-                        <option value="ALL">All Warehouse</option>
-                        <option value="VNDB">VNDB</option>
-                        <option value="VNDL">VNDL</option>
-                    </select>
-                </div>
-                <button class="btn-search" onclick="filterRequest()">Search</button>
-            </div>
-        </div>
-        <div class="card" style="padding:0;">
-            <div class="card-title" style="margin:25px 0 15px 25px;">TOTAL REQUEST</div>
-            <table>
-                <thead><tr><th>Date</th><th>WH</th><th>Vendor</th><th>Task</th><th>Booking</th></tr></thead>
-                <tbody id="reqBody">
-                    <tr><td>17/03/2026</td><td>VNDL</td><td>SKT</td><td>Put</td><td>1.1</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+
 
     <script>
-        // JS PHẦN RECORDING CŨ CỦA MÀY
-        const CSV_URL = '
+
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=915514461&single=true&output=csv';
+
+        let db = [];
+
+
+
+        async function init() {
+
+            const resp = await fetch(CSV_URL);
+
+            const text = await resp.text();
+
+            db = text.split('\n').map(l => {
+
+                return l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/^"|"$/g, ''));
+
+            });
+
+            const sel = document.getElementById('recTime');
+
+            for(let i=0; i<48; i++) {
+
+                let h = Math.floor(i/2).toString().padStart(2,'0'), m = (i%2==0?'00':'30');
+
+                sel.add(new Option(`${h}:${m}`, `${h}:${m}`));
+
+            }
+
+        }
+
+
+
+        document.getElementById('wfmInput').addEventListener('input', (e) => {
+
+            const val = e.target.value.trim().toUpperCase();
+
+            const row = db.find(r => r[2] === val);
+
+            if(row) {
+
+                document.getElementById('res_vendor').innerText = row[1] || '-';
+
+                document.getElementById('res_name').innerText   = row[4] || '-';
+
+                document.getElementById('res_id').innerText     = row[2] || '-';
+
+                document.getElementById('res_user').innerText   = row[3] || '-';
+
+                document.getElementById('res_email').innerText  = row[7] || '-';
+
+            } else {
+
+                ['res_vendor','res_name','res_id','res_user','res_email'].forEach(id => document.getElementById(id).innerText = '-');
+
+            }
+
+        });
+
+
+
+        window.onload = init;
+
+    </script>
+
+</body>
+
+</html>"
