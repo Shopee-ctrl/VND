@@ -96,12 +96,11 @@
 
                 if (f) {
                     audio.play();
-                    // Mapping cột chuẩn theo Sheets: B=1, D=3, I=8, K=10
                     document.getElementById('resID').innerText = val;
-                    document.getElementById('resVendor').innerText = f[1] || "-";
-                    document.getElementById('resName').innerText = f[3] || "-";
-                    document.getElementById('resUserID').innerText = f[8] || "-";
-                    document.getElementById('resEmail').innerText = f[10] || "-";
+                    document.getElementById('resVendor').innerText = f[1] || "-"; // Cột B
+                    document.getElementById('resName').innerText = f[3] || "-";   // Cột D
+                    document.getElementById('resUserID').innerText = f[8] || "-"; // Cột I
+                    document.getElementById('resEmail').innerText = f[10] || "-"; // Cột K
 
                     const log = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${document.getElementById('pj').value}</td><td>${val}</td><td>${f[3] || '-'}</td><td style="color:#10b981;font-weight:bold">Success</td></tr>`;
                     document.getElementById('logList').insertAdjacentHTML('afterbegin', log);
