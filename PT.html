@@ -2,7 +2,8 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO Recording System - FINAL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BPO Recording System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #2b26c1; --bg: #f4f7fe; --blue: #4d44ff; }
@@ -45,18 +46,18 @@
             <div class="card">
                 <div class="card-title">BPO PT INFORMATION</div>
                 <div class="grid-inputs" style="grid-template-columns: 1fr 1fr;">
-                    <div><label>VENDOR (Cột B)</label><div class="info-box" id="resVendor">-</div></div>
-                    <div><label>FULL NAME (Cột D)</label><div class="info-box" id="resName">-</div></div>
+                    <div><label>VENDOR</label><div class="info-box" id="resVendor">-</div></div>
+                    <div><label>FULL NAME</label><div class="info-box" id="resName">-</div></div>
                 </div>
                 <div class="grid-inputs" style="grid-template-columns: 1fr 1fr;">
-                    <div><label>WFM ID (Quét)</label><div class="info-box" id="resID">-</div></div>
-                    <div><label>USER WFM ID (Cột I)</label><div class="info-box" id="resUserID">-</div></div>
+                    <div><label>WFM ID</label><div class="info-box" id="resID">-</div></div>
+                    <div><label>USER WFM ID</label><div class="info-box" id="resUserID">-</div></div>
                 </div>
-                <label>WFM EMAIL (Cột K)</label><div class="info-box" id="resEmail">-</div>
+                <label>WFM EMAIL</label><div class="info-box" id="resEmail">-</div>
             </div>
         </div>
         <div class="card" style="padding:0;"><div class="card-title" style="margin:20px 0 0 20px;">DATA ENTRY LOGS</div>
-            <table><thead><tr><th>Time</th><th>WH</th><th>WFM ID</th><th>Full name</th><th>Status</th></tr></thead>
+            <table><thead><tr><th>Time</th><th>Warehouse</th><th>WFM ID</th><th>Full name</th><th>Status</th></tr></thead>
             <tbody id="logList"></tbody></table>
         </div>
     </div>
@@ -68,28 +69,20 @@
 
         async function init() {
             try {
-                // Thêm timestamp để ép Google nhả data mới nhất (Fix lỗi lúc được lúc không)
                 const cacheBuster = new Date().getTime();
                 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&gid=0&t=${cacheBuster}`;
                 
                 const res = await fetch(CSV_URL);
-                if (!res.ok) throw new Error("Fetch failed");
                 const text = await res.text();
                 
-                // Tách dòng và làm sạch dữ liệu (Xóa dấu ngoặc kép bọc quanh ô)
                 const rows = text.split(/\r?\n/);
                 db = rows.map(row => {
-                    return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => 
-                        cell.replace(/^"|"$/g, '').trim()
-                    );
+                    return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '').trim());
                 });
 
-                if (db.length > 0) {
-                    document.getElementById('stt').innerText = "🟢 Data Ready";
-                    document.getElementById('stt').style.color = "#10b981";
-                }
+                document.getElementById('stt').innerText = "🟢 Data Ready";
+                document.getElementById('stt').style.color = "#10b981";
             } catch (e) {
-                console.error("Lỗi:", e);
                 document.getElementById('stt').innerText = "🔴 Lỗi kết nối!";
             }
         }
@@ -99,23 +92,16 @@
                 const val = this.value.trim();
                 if (!val) return;
 
-                // Tìm dòng chứa mã quét (WFM Booking nằm ở cột J)
                 const f = db.find(row => row.some(cell => cell === val));
 
                 if (f) {
                     audio.play();
-                    
-                    /* Cấu trúc dựa trên Google Sheets của ông:
-                       f[1]  = Cột B (Station -> VENDOR)
-                       f[3]  = Cột D (Team -> FULL NAME)
-                       f[8]  = Cột I (Loại CTV -> USER WFM ID)
-                       f[10] = Cột K (Email -> WFM EMAIL)
-                    */
+                    // Mapping cột chuẩn theo Sheets: B=1, D=3, I=8, K=10
                     document.getElementById('resID').innerText = val;
                     document.getElementById('resVendor').innerText = f[1] || "-";
-                    document.getElementById('resName').innerText   = f[3] || "-";
+                    document.getElementById('resName').innerText = f[3] || "-";
                     document.getElementById('resUserID').innerText = f[8] || "-";
-                    document.getElementById('resEmail').innerText  = f[10] || "-";
+                    document.getElementById('resEmail').innerText = f[10] || "-";
 
                     const log = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${document.getElementById('pj').value}</td><td>${val}</td><td>${f[3] || '-'}</td><td style="color:#10b981;font-weight:bold">Success</td></tr>`;
                     document.getElementById('logList').insertAdjacentHTML('afterbegin', log);
@@ -125,9 +111,6 @@
                 }
             }
         });
-
-        // Tự động tải lại data sau mỗi 5 phút để cập nhật nhân sự mới
-        setInterval(init, 300000);
         window.onload = init;
     </script>
 </body>
