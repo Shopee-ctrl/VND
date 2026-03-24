@@ -9,7 +9,7 @@
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --green: #10b981; --orange: #ff5722; --text-gray: #a3abc1; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar giữ nguyên */
+        /* Sidebar */
         .sidebar { width: 260px; background: var(--sidebar); color: white; padding-top: 20px; flex-shrink: 0; }
         .nav-item { padding: 15px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; margin: 5px 15px; border-radius: 12px; cursor: pointer; transition: 0.3s; }
         .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(77, 68, 255, 0.3); }
@@ -39,7 +39,7 @@
         th { text-align: left; padding: 15px; color: var(--text-gray); font-size: 11px; font-weight: 800; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 15px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #1b2559; font-weight: 600; }
         
-        .btn-search { background: var(--orange); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; height: 48px; box-shadow: 0 4px 10px rgba(255, 87, 34, 0.2); transition: 0.2s; }
+        .btn-search { background: var(--orange); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; height: 48px; box-shadow: 0 4px 10px rgba(255, 87, 34, 0.2); transition: 0.2s; display: flex; align-items: center; gap: 8px; }
         .btn-confirm { width: 100%; padding: 15px; border: none; border-radius: 12px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 15px; }
         .btn-group { display: flex; gap: 15px; margin-bottom: 20px; background: #f4f7fe; padding: 5px; border-radius: 12px; }
         .btn-scan { flex: 1; padding: 12px; border: none; border-radius: 10px; background: transparent; color: var(--text-gray); font-weight: bold; cursor: pointer; }
@@ -112,7 +112,7 @@
                     <label>Select Team(s)</label>
                     <div class="multiselect">
                         <div class="selectBox" onclick="toggleCheckboxes()">
-                            <select style="color: #1b2559;"><option id="selectedTeamText">Tất cả Team</option></select>
+                            <select><option id="selectedTeamText">Tất cả Team</option></select>
                             <div class="overSelect"></div>
                         </div>
                         <div id="checkboxes">
@@ -162,22 +162,18 @@
 
         function updateTeamText() {
             let checked = Array.from(document.querySelectorAll('.team-cb:checked')).map(c => c.value);
-            let text = checked.length === 0 ? "Chưa chọn" : (checked.length === 5 ? "Tất cả Team" : (checked.length > 2 ? checked.length + " Teams" : checked.join(", ")));
-            document.getElementById("selectedTeamText").innerText = text;
+            document.getElementById("selectedTeamText").innerText = checked.length === 0 ? "Chọn Team" : (checked.length === 5 ? "Tất cả Team" : checked.join(", "));
         }
 
         async function init() {
-            try {
-                const [r1, r2] = await Promise.all([fetch(STAFF_URL), fetch(COMMIT_URL)]);
-                staffDb = (await r1.text()).split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
-                commitDb = (await r2.text()).split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
-                
-                const sel = document.getElementById('timeSelect');
-                for(let i=0; i<48; i++) {
-                    let h = Math.floor(i/2).toString().padStart(2,'0'), m = (i%2==0?'00':'30');
-                    sel.add(new Option(`${h}:${m}`, `${h}:${m}`));
-                }
-            } catch(e) { alert("Lỗi tải dữ liệu từ Google Sheets!"); }
+            const [r1, r2] = await Promise.all([fetch(STAFF_URL), fetch(COMMIT_URL)]);
+            staffDb = (await r1.text()).split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+            commitDb = (await r2.text()).split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+            const sel = document.getElementById('timeSelect');
+            for(let i=0; i<48; i++) {
+                let h = Math.floor(i/2).toString().padStart(2,'0'), m = (i%2==0?'00':'30');
+                sel.add(new Option(`${h}:${m}`, `${h}:${m}`));
+            }
         }
 
         function handleConfirm() {
@@ -190,7 +186,7 @@
                 const now = new Date();
                 document.getElementById('logList').insertAdjacentHTML('afterbegin', `<tr><td>${now.toLocaleTimeString()}</td><td>${document.getElementById('recWH').value}</td><td>${id}</td><td>${s[3]}</td><td><span class="${scanMode==='IN'?'tag-in':'tag-out'}">${scanMode}</span></td><td style="color:var(--green)">Thành công</td></tr>`);
                 document.getElementById('wfmInput').value = '';
-            } else alert("Không tìm thấy WFM ID!");
+            } else alert("Sai WFM ID!");
         }
 
         function searchRequest() {
@@ -198,34 +194,30 @@
             const whVal = document.getElementById('fWH').value;
             const selectedTeams = Array.from(document.querySelectorAll('.team-cb:checked')).map(c => c.value);
             
-            if (!dVal) { alert("Chọn Ngày đã mày!"); return; }
-            if (selectedTeams.length === 0) { alert("Tích chọn ít nhất 1 Team!"); return; }
-
+            if (!dVal) { alert("Chọn Ngày!"); return; }
             const targetDate = dVal.split('-').reverse().join('/');
             
-            // Logic: Chỉ lấy VNDL/VNDB, đúng ngày, và Team nằm trong danh sách đã tích
             const filtered = commitDb.slice(1).filter(r => {
+                if(r.length < 8) return false;
                 const isCorrectWH = (r[1] === "VNDL" || r[1] === "VNDB");
                 const matchDate = (r[0] === targetDate);
                 const matchWH = (whVal === "ALL" || r[1] === whVal);
                 const matchTeam = selectedTeams.includes(r[3]);
-                
                 return isCorrectWH && matchDate && matchWH && matchTeam;
             });
 
             const tbody = document.getElementById('reqBody');
-            tbody.innerHTML = filtered.length ? '' : '<tr><td colspan="8" style="text-align:center;">Không có dữ liệu phù hợp (Chỉ lấy VNDB/VNDL)</td></tr>';
-            
+            tbody.innerHTML = filtered.length ? '' : '<tr><td colspan="8" style="text-align:center;">No Data Found</td></tr>';
             filtered.forEach(r => {
                 tbody.innerHTML += `<tr>
-                    <td>${r[0] || ''}</td>
-                    <td style="color:var(--primary); font-weight:800">${r[1] || ''}</td>
-                    <td>${r[2] || ''}</td>
-                    <td>${r[3] || ''}</td>
-                    <td>${r[4] || ''}</td>
-                    <td style="color:var(--primary)">${r[5] || ''}</td>
-                    <td style="color:#f56565">${r[6] || ''}</td>
-                    <td style="font-weight:800">${r[7] || ''}</td>
+                    <td>${r[0]}</td>
+                    <td style="color:var(--primary); font-weight:800">${r[1]}</td>
+                    <td>${r[2]}</td>
+                    <td>${r[3]}</td>
+                    <td>${r[4]}</td>
+                    <td style="color:var(--primary)">${r[5]}</td>
+                    <td style="color:#f56565">${r[6]}</td>
+                    <td style="font-weight:800">${r[7] || '0'}</td>
                 </tr>`;
             });
             if(expanded) toggleCheckboxes();
