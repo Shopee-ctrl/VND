@@ -1,172 +1,41 @@
 <!DOCTYPE html>
+
 <html lang="vi">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BPO Recording System</title>
+
+    <title>BPO Recording System - Fix</title>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
+
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --green: #10b981; --orange: #ff5722; --text-gray: #a3abc1; }
+
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
-        
+
         .sidebar { width: 260px; background: var(--sidebar); color: white; padding-top: 20px; flex-shrink: 0; }
+
         .nav-item { padding: 15px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; margin: 5px 15px; border-radius: 12px; cursor: pointer; transition: 0.3s; }
+
         .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(77, 68, 255, 0.3); }
+
         .nav-item i { margin-right: 15px; width: 20px; text-align: center; }
 
         .main-content { flex: 1; padding: 25px; overflow-y: auto; display: none; }
+
         .main-content.active { display: block; }
-        
+
         .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); position: relative; margin-bottom: 25px; }
+
         .card-title { font-weight: bold; color: #1b2559; border-left: 4px solid var(--primary); padding-left: 15px; margin-bottom: 25px; text-transform: uppercase; font-size: 16px; }
-        
+
         label { display: block; font-size: 11px; font-weight: 800; color: #1b2559; margin-bottom: 8px; text-transform: uppercase; }
+
         input, select { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 12px; outline: none; font-size: 14px; font-weight: 600; color: #1b2559; box-sizing: border-box; }
-        
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 15px; color: var(--text-gray); font-size: 11px; font-weight: 800; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
-        td { padding: 15px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #1b2559; font-weight: 600; }
-        
-        .btn-search { background: var(--orange); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; height: 48px; box-shadow: 0 4px 10px rgba(255, 87, 34, 0.2); transition: 0.2s; }
-        .btn-confirm { width: 100%; padding: 15px; border: none; border-radius: 12px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 15px; }
-        .btn-group { display: flex; gap: 15px; margin-bottom: 20px; background: #f4f7fe; padding: 5px; border-radius: 12px; }
-        .btn-scan { flex: 1; padding: 12px; border: none; border-radius: 10px; background: transparent; color: var(--text-gray); font-weight: bold; cursor: pointer; }
-        .btn-scan.active { background: white; color: var(--green); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .info-box { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e0e5f2; font-size: 14px; color: #1b2559; font-weight: 700; min-height: 20px; }
-        .tag-in { background: #e6fffa; color: var(--green); padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; }
-        .tag-out { background: #fff5f5; color: #f56565; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; }
-    </style>
-</head>
-<body>
-    <div class="sidebar">
-        <div class="nav-item active" id="m-recording" onclick="switchTab('recording')"><i class="fas fa-microphone"></i> Recording BPO PT</div>
-        <div class="nav-item" id="m-request" onclick="switchTab('request')"><i class="fas fa-wallet"></i> Total VND Request</div>
-    </div>
 
-    <div id="recording" class="main-content active">
-        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 25px;">
-            <div class="card">
-                <div class="card-title">INPUT WFM ID <span style="color:var(--green); font-size: 10px; margin-left:10px;">🟢 DATA READY</span></div>
-                <div class="btn-group">
-                    <button class="btn-scan active" id="btnIn" onclick="setScan('IN')"><i class="fas fa-sign-in"></i> SCAN IN</button>
-                    <button class="btn-scan" id="btnOut" onclick="setScan('OUT')"><i class="fas fa-sign-out-alt"></i> SCAN OUT</button>
-                </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 15px;">
-                    <div><label>Warehouse</label>
-                        <select id="recWH"><option value="VNDB">VNDB</option><option value="VNDL">VNDL</option></select>
-                    </div>
-                    <div><label>Team</label>
-                        <select id="recTeam">
-                            <option value="Inventory">Inventory</option>
-                            <option value="Inbound">Inbound</option>
-                            <option value="FD">FD</option>
-                            <option value="OB">OB</option>
-                        </select>
-                    </div>
-                </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 20px;">
-                    <div><label>Time</label><select id="timeSelect"></select></div>
-                    <div><label>Shift</label>
-                        <select id="recShift"><option value="Day">Day</option><option value="Night">Night</option></select>
-                    </div>
-                </div>
-                <label>BPO Staff ID (WFM ID)</label>
-                <input type="text" id="wfmInput" placeholder="Input WFM, please..." autocomplete="off">
-                <button class="btn-confirm" onclick="handleConfirm()">CONFIRM</button>
-            </div>
-            <div class="card">
-                <div class="card-title">BPO PT INFORMATION</div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                    <div><label>VENDOR</label><div class="info-box" id="resVendor">-</div></div>
-                    <div><label>FULL NAME</label><div class="info-box" id="resName">-</div></div>
-                    <div><label>WFM ID</label><div class="info-box" id="resID">-</div></div>
-                    <div><label>USER WFM ID</label><div class="info-box" id="resUserID">-</div></div>
-                </div>
-                <div style="margin-top:15px;"><label>WFM EMAIL</label><div class="info-box" id="resEmail">-</div></div>
-            </div>
-        </div>
-        <div class="card" style="padding:0;"><div class="card-title" style="margin:25px 0 15px 25px;">DATA ENTRY LOGS</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Time</th><th>Warehouse</th><th>Team</th><th>Vendor</th><th>WFM ID</th><th>Full Name</th><th>Type</th><th>Status</th>
-                    </tr>
-                </thead>
-                <tbody id="logList"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <div id="request" class="main-content">
-        </div>
-
-    <script>
-        const STAFF_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=0&single=true&output=csv';
-        let staffDb = [], scanMode = "IN", currentStaff = null;
-
-        function switchTab(t) {
-            document.querySelectorAll('.main-content').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById(t).classList.add('active');
-            document.getElementById('m-' + t).classList.add('active');
-        }
-
-        function setScan(m) {
-            scanMode = m;
-            document.getElementById('btnIn').classList.toggle('active', m === 'IN');
-            document.getElementById('btnOut').classList.toggle('active', m === 'OUT');
-        }
-
-        async function init() {
-            const resp = await fetch(STAFF_URL);
-            staffDb = (await resp.text()).split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
-            const sel = document.getElementById('timeSelect');
-            for(let i=0; i<48; i++) {
-                let h = Math.floor(i/2).toString().padStart(2,'0'), m = (i%2==0?'00':'30');
-                sel.add(new Option(`${h}:${m}`, `${h}:${m}`));
-            }
-        }
-
-        document.getElementById('wfmInput').addEventListener('input', (e) => {
-            const id = e.target.value.trim().toUpperCase();
-            currentStaff = staffDb.find(r => r[8] === id);
-            if(currentStaff) {
-                document.getElementById('resVendor').innerText = currentStaff[1]; 
-                document.getElementById('resName').innerText = currentStaff[3];
-                document.getElementById('resID').innerText = currentStaff[8]; 
-                document.getElementById('resUserID').innerText = currentStaff[9];
-                document.getElementById('resEmail').innerText = currentStaff[10];
-            } else {
-                ['resVendor','resName','resID','resUserID','resEmail'].forEach(el => document.getElementById(el).innerText = '-');
-            }
-        });
-
-        function handleConfirm() {
-            if(!currentStaff) return; // CHẶN Ở ĐÂY: Ko có data hợp lệ thì ko chạy gì hết
-
-            const now = new Date();
-            const warehouse = document.getElementById('recWH').value;
-            const team = document.getElementById('recTeam').value;
-            
-            document.getElementById('logList').insertAdjacentHTML('afterbegin', `
-                <tr>
-                    <td>${now.toLocaleTimeString()}</td>
-                    <td>${warehouse}</td>
-                    <td>${team}</td>
-                    <td>${currentStaff[1]}</td>
-                    <td>${currentStaff[8]}</td>
-                    <td>${currentStaff[3]}</td>
-                    <td><span class="${scanMode==='IN'?'tag-in':'tag-out'}">${scanMode}</span></td>
-                    <td style="color:var(--green)">Thành công</td>
-                </tr>`);
-            
-            document.getElementById('wfmInput').value = '';
-            currentStaff = null;
-            ['resVendor','resName','resID','resUserID','resEmail'].forEach(el => document.getElementById(el).innerText = '-');
-        }
-
-        window.onload = init;
-        document.getElementById('wfmInput').onkeypress = (e) => { if(e.key === 'Enter') handleConfirm(); };
-    </script>
-</body>
-</html>
+        table { width: 100%; border
