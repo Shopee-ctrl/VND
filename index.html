@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO System - Fixed Link</title>
+    <title>BPO System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; }
@@ -86,10 +86,8 @@
         </div>
     </div>
 
-    <div id="fillrate" class="main-content"><div class="card">FILL RATE</div></div>
-
     <script>
-        // SỬ DỤNG LINK MỚI NHẤT MÀY ĐƯA
+        // LINK APPS SCRIPT CỦA MÀY
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwp1UEjOuWEaiCrx_BwjGnJRE9cOZLHHD1nBl6ANg4el5cuOHWH-XH-p5uHoBhQ9m4/exec';
         let logs = [];
 
@@ -109,11 +107,12 @@
         function handleConfirm() {
             const id = document.getElementById('wfmInput').value.trim();
             if(!id) return;
-            if(logs.some(l => l.wfmId === id)) return alert("ID này đã nhập rồi!");
-
-            const item = { time: tSel.value, wh: document.getElementById('wh').value, team: document.getElementById('team').value, vendor: "Agari", wfmId: id, name: "TRẦN BÙI ANH BẢO", type: "IN", synced: false };
+            
+            // Logic cũ: Thêm vào mảng logs
+            const item = { time: tSel.value, wh: document.getElementById('wh').value, team: document.getElementById('team').value, vendor: "Agari", wfmId: id, name: "NHÂN VIÊN TEST", type: "IN", synced: false };
             logs.unshift(item);
             
+            // Hiện info box
             document.getElementById('resVendor').innerText = item.vendor;
             document.getElementById('resName').innerText = item.name;
             document.getElementById('resID').innerText = item.wfmId;
@@ -134,7 +133,7 @@
 
         async function syncToSheet() {
             const pending = logs.filter(l => !l.synced);
-            if(pending.length === 0) return alert("Hết data rồi!");
+            if(pending.length === 0) return alert("Không có gì để sync");
             for(let l of pending) {
                 const fd = new URLSearchParams();
                 Object.keys(l).forEach(k => fd.append(k, l[k]));
@@ -142,20 +141,21 @@
                 l.synced = true;
             }
             render();
-            alert("Đã đồng bộ xong về sheet DATA PT!");
+            alert("Đã đồng bộ xong!");
         }
 
+        // Lấy data từ link loằng ngoằng đổ vào bảng
         async function loadRequestData() {
             const tbody = document.getElementById('reqBody');
             const whF = document.getElementById('reqWH').value;
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Đang tải...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Đang lấy dữ liệu...</td></tr>';
             try {
                 const res = await fetch(SCRIPT_URL);
                 const data = await res.json();
                 const filtered = data.filter(r => (whF === 'All' || r[1] === whF));
                 tbody.innerHTML = filtered.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`).join('');
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Lỗi! Mày hãy Update bản Apps Script như tao chỉ ở trên.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Lỗi kết nối!</td></tr>';
             }
         }
     </script>
