@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BPO Recording System</title>
+    <title>BPO Recording System - Final Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --green: #10b981; --orange: #ff5722; --text-gray: #a3abc1; }
@@ -122,30 +122,31 @@
     <script>
         const STAFF_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=0&single=true&output=csv';
         const COMMIT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=915514461&single=true&output=csv';
+        
+        // DÁN LINK MỚI CỦA MÀY VÀO ĐÂY
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxqOH6q_qiNT71q6kKUDFC1K6laUdbBs19aaXb8ri7kjrGIbhvlN-p5GJCbn273xLfv/exec';
+
         let staffDb = [], commitDb = [], scanMode = "IN";
 
-        // Khôi phục Log cực mạnh
         function loadHistory() {
             const today = new Date().toLocaleDateString();
-            const saved = localStorage.getItem('BPO_PERSISTENT_LOGS');
+            const saved = localStorage.getItem('BPO_STABLE_SYNC_LOGS');
             if (saved) {
                 const parsed = JSON.parse(saved);
                 if (parsed.date === today) {
                     const logList = document.getElementById('logList');
-                    logList.innerHTML = ''; // Clear trước khi đổ
+                    logList.innerHTML = '';
                     parsed.data.forEach(html => logList.insertAdjacentHTML('beforeend', html));
-                } else {
-                    localStorage.removeItem('BPO_PERSISTENT_LOGS');
                 }
             }
         }
 
         function saveHistory(html) {
             const today = new Date().toLocaleDateString();
-            const saved = localStorage.getItem('BPO_PERSISTENT_LOGS');
+            const saved = localStorage.getItem('BPO_STABLE_SYNC_LOGS');
             let data = saved ? JSON.parse(saved).data : [];
             data.unshift(html);
-            localStorage.setItem('BPO_PERSISTENT_LOGS', JSON.stringify({ date: today, data: data }));
+            localStorage.setItem('BPO_STABLE_SYNC_LOGS', JSON.stringify({ date: today, data: data }));
         }
 
         function switchTab(t) {
@@ -166,48 +167,66 @@
                 const [r1, r2] = await Promise.all([fetch(STAFF_URL), fetch(COMMIT_URL)]);
                 staffDb = (await r1.text()).split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
                 commitDb = (await r2.text()).split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
-                
                 const sel = document.getElementById('timeSelect');
                 for(let i=0; i<48; i++) {
                     let h = Math.floor(i/2).toString().padStart(2,'0'), m = (i%2==0?'00':'30');
                     sel.add(new Option(`${h}:${m}`, `${h}:${m}`));
                 }
-                loadHistory(); // Gọi khôi phục ngay sau khi init
-            } catch (e) { console.error("Lỗi load data:", e); }
+                loadHistory();
+            } catch (e) { console.error("Lỗi tải dữ liệu:", e); }
         }
 
-        function handleConfirm() {
+        async function handleConfirm() {
             const id = document.getElementById('wfmInput').value.trim();
             if(!id) return;
             const s = staffDb.find(r => r[8] === id);
             if(!s) { alert("ID không tồn tại!"); return; }
 
-            // Chặn trùng dựa trên data đã lưu trong máy
-            const saved = localStorage.getItem('BPO_PERSISTENT_LOGS');
-            if (saved && JSON.parse(saved).data.some(h => h.includes(`<td>${id}</td>`))) {
-                alert("ID này quét rồi !"); return;
-            }
+            const logData = {
+                time: new Date().toLocaleString('vi-VN'),
+                warehouse: document.getElementById('recWH').value,
+                team: document.getElementById('recTeam').value,
+                vendor: s[1],
+                wfmId: id,
+                fullName: s[3],
+                type: scanMode
+            };
 
-            document.getElementById('resVendor').innerText = s[1]; 
-            document.getElementById('resName').innerText = s[3];
-            document.getElementById('resID').innerText = s[8]; 
-            document.getElementById('resUserID').innerText = s[9];
-            document.getElementById('resEmail').innerText = s[10];
-            
             const logRow = `<tr>
                 <td>${new Date().toLocaleTimeString()}</td>
-                <td>${document.getElementById('recWH').value}</td>
-                <td>${document.getElementById('recTeam').value}</td>
-                <td>${s[1]}</td>
+                <td>${logData.warehouse}</td>
+                <td>${logData.team}</td>
+                <td>${logData.vendor}</td>
                 <td>${id}</td>
-                <td>${s[3]}</td>
+                <td>${logData.fullName}</td>
                 <td><span class="${scanMode==='IN'?'tag-in':'tag-out'}">${scanMode}</span></td>
-                <td style="color:var(--green)">Thành công</td>
+                <td class="sync-status" style="color:#f59e0b">Đồng bộ...</td>
             </tr>`;
             
-            document.getElementById('logList').insertAdjacentHTML('afterbegin', logRow);
+            const logList = document.getElementById('logList');
+            logList.insertAdjacentHTML('afterbegin', logRow);
             saveHistory(logRow);
             document.getElementById('wfmInput').value = '';
+
+            // Đẩy Online lên Google Sheets
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify(logData)
+                });
+                const firstRowStatus = logList.querySelector('tr .sync-status');
+                if (firstRowStatus) {
+                    firstRowStatus.innerText = "Thành công";
+                    firstRowStatus.style.color = "var(--green)";
+                }
+            } catch (e) {
+                const firstRowStatus = logList.querySelector('tr .sync-status');
+                if (firstRowStatus) {
+                    firstRowStatus.innerText = "Lỗi mạng";
+                    firstRowStatus.style.color = "red";
+                }
+            }
         }
 
         function searchRequest() {
