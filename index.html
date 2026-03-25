@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO System - Giao Diện Gốc</title>
+    <title>BPO System - Bản Gốc Fix Lỗi</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; }
@@ -24,6 +24,13 @@
         th { text-align: left; padding: 15px; color: var(--text-gray); font-size: 11px; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 15px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #1b2559; font-weight: 600; }
         .info-box { background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #e0e5f2; font-weight: bold; min-height: 22px; color: #1b2559; margin-bottom: 10px; }
+        /* Dropdown chọn nhiều kho */
+        .multiselect { position: relative; width: 100%; }
+        .selectBox { position: relative; }
+        .overSelect { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
+        #checkboxes { display: none; border: 1px #dadada solid; position: absolute; background-color: white; width: 100%; z-index: 10; border-radius: 12px; padding: 5px; }
+        #checkboxes label { display: block; padding: 5px; text-transform: none; font-size: 13px; cursor: pointer; }
+        #checkboxes label:hover { background-color: #f1f5f9; }
     </style>
 </head>
 <body>
@@ -71,9 +78,23 @@
     <div id="request" class="main-content">
         <div class="card">
             <div class="card-title">FILTER DATA REQUEST</div>
-            <div style="display: flex; gap: 20px; align-items: flex-end;">
-                <div style="flex:1;"><label>Date</label><input type="date" id="reqDate" value="2026-03-25"></div>
-                <div style="flex:1;"><label>Warehouse</label><select id="reqWH"><option value="All">All</option><option value="VNDB">VNDB</option><option value="VNDL">VNDL</option></select></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 100px; gap: 15px; align-items: flex-end;">
+                <div><label>Date</label><input type="date" id="reqDate" value="2026-03-25"></div>
+                <div>
+                    <label>Warehouse (Chọn nhiều)</label>
+                    <div class="multiselect">
+                        <div class="selectBox" onclick="showCheckboxes()">
+                            <select><option id="whLabel">Chọn kho</option></select>
+                            <div class="overSelect"></div>
+                        </div>
+                        <div id="checkboxes">
+                            <label><input type="checkbox" value="VNDB" onchange="updateLabel()"> VNDB</label>
+                            <label><input type="checkbox" value="VNDL" onchange="updateLabel()"> VNDL</label>
+                            <label><input type="checkbox" value="VNDM" onchange="updateLabel()"> VNDM</label>
+                        </div>
+                    </div>
+                </div>
+                <div><label>Team</label><select id="reqTeam"><option value="All">All Team</option><option>Inventory</option><option>Inbound</option><option>FD</option><option>OB</option></select></div>
                 <button class="btn-search" onclick="loadRequestData()">SEARCH</button>
             </div>
         </div>
@@ -86,17 +107,13 @@
         </div>
     </div>
 
-    <div id="fillrate" class="main-content">
-        <div class="card">
-            <div class="card-title">FILL RATE PERFORMANCE</div>
-            <p>Dữ liệu Fill rate đang được cập nhật...</p>
-        </div>
-    </div>
-
     <script>
-        // LINK APPS SCRIPT
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwp1UEjOuWEaiCrx_BwjGnJRE9cOZLHHD1nBl6ANg4el5cuOHWH-XH-p5uHoBhQ9m4/exec';
-        let logs = [];
+        
+        // FIX LỖI F5 MẤT DATA: Lấy từ LocalStorage
+        let logs = JSON.parse(localStorage.getItem('bpo_logs')) || [];
+
+        window.onload = () => { render(); fillTime(); };
 
         function switchTab(t, el) {
             document.querySelectorAll('.main-content').forEach(c => c.classList.remove('active'));
@@ -105,34 +122,22 @@
             el.classList.add('active');
         }
 
-        const tSel = document.getElementById('time');
-        for(let i=0; i<48; i++) {
-            let h = Math.floor(i/2).toString().padStart(2,'0'), m = i%2==0?'00':'30';
-            tSel.add(new Option(`${h}:${m}`, `${h}:${m}`));
+        function fillTime() {
+            const tSel = document.getElementById('time');
+            for(let i=0; i<48; i++) {
+                let h = Math.floor(i/2).toString().padStart(2,'0'), m = i%2==0?'00':'30';
+                tSel.add(new Option(`${h}:${m}`, `${h}:${m}`));
+            }
         }
 
         function handleConfirm() {
             const id = document.getElementById('wfmInput').value.trim();
             if(!id) return;
-            
-            const item = { 
-                time: tSel.value, 
-                wh: document.getElementById('wh').value, 
-                team: document.getElementById('team').value, 
-                vendor: "Agari", 
-                wfmId: id, 
-                name: "NHÂN VIÊN TEST", 
-                type: "IN", 
-                synced: false 
-            };
+            const item = { time: document.getElementById('time').value, wh: document.getElementById('wh').value, team: document.getElementById('team').value, vendor: "Agari", wfmId: id, name: "TRẦN BÙI ANH BẢO", type: "IN", synced: false };
             logs.unshift(item);
+            localStorage.setItem('bpo_logs', JSON.stringify(logs)); // Lưu vào máy
             
-            document.getElementById('resVendor').innerText = item.vendor;
-            document.getElementById('resName').innerText = item.name;
-            document.getElementById('resID').innerText = item.wfmId;
-            document.getElementById('resUserID').innerText = id; // ĐÃ BỎ US-
-            document.getElementById('resEmail').innerText = id + "@shopee.com";
-
+            document.getElementById('resUserID').innerText = id; // BỎ US-
             render();
             document.getElementById('wfmInput').value = "";
         }
@@ -140,36 +145,51 @@
         function render() {
             document.getElementById('logList').innerHTML = logs.map((l, i) => `
                 <tr><td>${l.time}</td><td>${l.wh}</td><td>${l.team}</td><td>${l.vendor}</td><td>${l.wfmId}</td><td>${l.name}</td>
-                <td><span style="background:#e6fffa;color:#10b981;padding:4px 8px;border-radius:6px;font-size:11px;">IN</span></td>
-                <td style="color:${l.synced?'#10b981':'orange'}">${l.synced?'Thành công':'Chờ Sync'}</td>
-                <td><i class="fas fa-trash" style="color:red;cursor:pointer" onclick="logs.splice(${i},1);render()"></i></td></tr>`).join('');
+                <td>IN</td><td style="color:${l.synced?'green':'orange'}">${l.synced?'Thành công':'Chờ Sync'}</td>
+                <td><i class="fas fa-trash" onclick="deleteLog(${i})"></i></td></tr>`).join('');
         }
+
+        function deleteLog(i) { logs.splice(i, 1); localStorage.setItem('bpo_logs', JSON.stringify(logs)); render(); }
 
         async function syncToSheet() {
             const pending = logs.filter(l => !l.synced);
-            if(pending.length === 0) return alert("Không có dữ liệu mới để đồng bộ.");
+            if(!pending.length) return alert("Không có data mới");
             for(let l of pending) {
                 const fd = new URLSearchParams();
                 Object.keys(l).forEach(k => fd.append(k, l[k]));
+                // Đảm bảo bắn về đúng tab DATA PT qua doPost trong script
                 await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: fd.toString() });
                 l.synced = true;
             }
+            localStorage.setItem('bpo_logs', JSON.stringify(logs));
             render();
-            alert("Đã đồng bộ xong lên tab DATA PT!");
+            alert("Đã bắn về Sheet DATA PT!");
+        }
+
+        // CHỌN NHIỀU KHO
+        let expanded = false;
+        function showCheckboxes() {
+            const cb = document.getElementById("checkboxes");
+            cb.style.display = expanded ? "none" : "block";
+            expanded = !expanded;
+        }
+        function updateLabel() {
+            const checked = Array.from(document.querySelectorAll('#checkboxes input:checked')).map(i => i.value);
+            document.getElementById("whLabel").innerText = checked.length ? checked.join(', ') : "Chọn kho";
         }
 
         async function loadRequestData() {
             const tbody = document.getElementById('reqBody');
-            const whF = document.getElementById('reqWH').value;
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Đang tải dữ liệu từ Vendor Commit...</td></tr>';
+            const selectedWhs = Array.from(document.querySelectorAll('#checkboxes input:checked')).map(i => i.value);
+            const teamF = document.getElementById('reqTeam').value;
+            
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Đang lấy dữ liệu...</td></tr>';
             try {
                 const res = await fetch(SCRIPT_URL);
-                const data = await res.json();
-                const filtered = data.filter(r => (whF === 'All' || r[1] === whF));
+                const data = await res.json(); // Lấy từ Vendor Commit
+                const filtered = data.filter(r => (selectedWhs.length === 0 || selectedWhs.includes(r[1])) && (teamF === 'All' || r[3] === teamF));
                 tbody.innerHTML = filtered.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`).join('');
-            } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Lỗi kết nối hoặc Sheet trống!</td></tr>';
-            }
+            } catch (e) { tbody.innerHTML = '<tr><td colspan="6" style="color:red">Lỗi tải dữ liệu!</td></tr>'; }
         }
     </script>
 </body>
