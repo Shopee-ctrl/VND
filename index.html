@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO System - Tốc Độ Cao</title>
+    <title>BPO System - Smart Filter</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; }
@@ -66,7 +66,7 @@
         <div class="card" style="padding:0; min-height:350px;">
             <div class="card-title" style="margin:25px 0 15px 25px;">DATA ENTRY LOGS</div>
             <table>
-                <thead><tr><th>Time</th><th>WH</th><th>Team</th><th>Vendor</th><th>WFM ID</th><th>Full Name</th><th>Type</th><th>Status</th><th>Action</th></tr></thead>
+                <thead><tr><th>Time</th><th>WH</th><th>Team</th><th>Vendor</th><th>WFM ID</th><th>Full Name</th><th>Status</th><th>Action</th></tr></thead>
                 <tbody id="logList"></tbody>
             </table>
             <button class="btn-sync" onclick="syncToSheet()">SYNC TO SHEET</button>
@@ -78,12 +78,12 @@
             <div class="card-title">FILTER DATA REQUEST</div>
             <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr 100px; gap: 15px; align-items: flex-end;">
                 <div><label>Date</label><input type="date" id="reqDate" value="2026-03-25"></div>
-                <div><label>Warehouse (VNDB, VNDL)</label>
+                <div><label>Warehouse (Mặc định lấy hết)</label>
                     <div class="multiselect">
-                        <div class="selectBox" onclick="showCheckboxes()"><select><option id="whLabel">VNDB, VNDL</option></select><div class="overSelect"></div></div>
+                        <div class="selectBox" onclick="showCheckboxes()"><select><option id="whLabel">Tất cả kho</option></select><div class="overSelect"></div></div>
                         <div id="checkboxes">
-                            <label><input type="checkbox" value="VNDB" checked onchange="updateLabel()"> VNDB</label>
-                            <label><input type="checkbox" value="VNDL" checked onchange="updateLabel()"> VNDL</label>
+                            <label><input type="checkbox" value="VNDB" onchange="updateLabel()"> VNDB</label>
+                            <label><input type="checkbox" value="VNDL" onchange="updateLabel()"> VNDL</label>
                         </div>
                     </div>
                 </div>
@@ -103,7 +103,7 @@
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwp1UEjOuWEaiCrx_BwjGnJRE9cOZLHHD1nBl6ANg4el5cuOHWH-XH-p5uHoBhQ9m4/exec';
         let logs = JSON.parse(localStorage.getItem('bpo_logs')) || [];
-        let rawData = []; // Cache dữ liệu để lọc siêu tốc
+        let rawDataCache = [];
 
         window.onload = () => { render(); fillTime(); preloadData(); };
 
@@ -115,13 +115,21 @@
             }
         }
 
+        // Định dạng ngày DD/MM/YYYY chuẩn như file sheet
+        function formatDateDisplay(str) {
+            if(!str) return "-";
+            const d = new Date(str);
+            if(isNaN(d)) return str;
+            return d.toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric'});
+        }
+
         function handleConfirm() {
             const id = document.getElementById('wfmInput').value.trim();
             if(!id) return;
             const item = { time: document.getElementById('time').value, wh: document.getElementById('wh').value, team: document.getElementById('team').value, vendor: "Agari", wfmId: id, name: "TRẦN BÙI ANH BẢO", type: "IN", synced: false };
             logs.unshift(item);
             localStorage.setItem('bpo_logs', JSON.stringify(logs));
-            document.getElementById('resUserID').innerText = id; //
+            document.getElementById('resUserID').innerText = id; 
             render();
             document.getElementById('wfmInput').value = "";
         }
@@ -129,8 +137,8 @@
         function render() {
             document.getElementById('logList').innerHTML = logs.map((l, i) => `
                 <tr><td>${l.time}</td><td>${l.wh}</td><td>${l.team}</td><td>${l.vendor}</td><td>${l.wfmId}</td><td>${l.name}</td>
-                <td>IN</td><td style="color:${l.synced?'#10b981':'orange'}">${l.synced?'Thành công':'Chờ Sync'}</td>
-                <td><i class="fas fa-trash" style="color:red;cursor:pointer" onclick="logs.splice(${i},1);localStorage.setItem('bpo_logs', JSON.stringify(logs));render()"></i></td></tr>`).join('');
+                <td style="color:${l.synced?'#10b981':'orange'}">${l.synced?'Thành công':'Chờ Sync'}</td>
+                <td><i class="fas fa-trash" style="color:red;cursor:pointer" onclick="logs.splice(${i},1);localStorage.setItem('bpo_logs',JSON.stringify(logs));render()"></i></td></tr>`).join('');
         }
 
         async function syncToSheet() {
@@ -143,41 +151,50 @@
                 }
                 localStorage.setItem('bpo_logs', JSON.stringify(logs));
                 render();
-                alert("Đã đồng bộ lên DATA PT!"); //
-            } catch(e) { alert("Lỗi truyền data!"); }
+                alert("Đã đồng bộ lên DATA PT!"); 
+            } catch(e) { alert("Lỗi kết nối!"); }
         }
 
-        // Tối ưu tốc độ: Tải trước dữ liệu 1 lần duy nhất
         async function preloadData() {
             try {
                 const res = await fetch(SCRIPT_URL);
-                rawData = await res.json();
-            } catch(e) { console.error("Không tải được data nguồn"); }
+                rawDataCache = await res.json();
+            } catch(e) { console.log("Cache error"); }
         }
 
         function loadRequestData() {
             const tbody = document.getElementById('reqBody');
-            const dateF = document.getElementById('reqDate').value; // Lọc theo ngày
-            const selectedWhs = Array.from(document.querySelectorAll('#checkboxes input:checked')).map(i => i.value);
+            const dateF = document.getElementById('reqDate').value;
+            const whs = Array.from(document.querySelectorAll('#checkboxes input:checked')).map(i => i.value);
             const teamF = document.getElementById('reqTeam').value;
 
-            // Xử lý lọc siêu tốc tại client
-            const filtered = rawData.filter(r => {
-                const rDate = r[0].split('T')[0]; // Định dạng 2025-09-15
+            // Logic lọc thông minh
+            const filtered = rawDataCache.filter(r => {
+                const rDate = r[0].split('T')[0];
                 const matchDate = !dateF || rDate === dateF;
-                const matchWh = selectedWhs.length === 0 || selectedWhs.includes(r[1]);
+                // Nếu whs trống thì lấy hết VNDB, VNDL
+                const matchWh = whs.length === 0 ? (r[1] === 'VNDB' || r[1] === 'VNDL') : whs.includes(r[1]);
+                // Nếu teamF là 'All' thì lấy hết các team
                 const matchTeam = teamF === 'All' || r[3] === teamF;
                 return matchDate && matchWh && matchTeam;
             });
 
-            tbody.innerHTML = filtered.length ? filtered.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`).join('') : '<tr><td colspan="6" style="text-align:center;">Không tìm thấy dữ liệu phù hợp</td></tr>';
+            tbody.innerHTML = filtered.map(r => `
+                <tr>
+                    <td>${formatDateDisplay(r[0])}</td>
+                    <td>${r[1]}</td>
+                    <td>${r[2]}</td>
+                    <td>${r[3]}</td>
+                    <td>${r[4]}</td>
+                    <td>${r[5]}</td>
+                </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;">Không có data phù hợp</td></tr>';
         }
 
         let expanded = false;
         function showCheckboxes() { const cb = document.getElementById("checkboxes"); cb.style.display = expanded ? "none" : "block"; expanded = !expanded; }
         function updateLabel() {
             const checked = Array.from(document.querySelectorAll('#checkboxes input:checked')).map(i => i.value);
-            document.getElementById("whLabel").innerText = checked.length ? checked.join(', ') : "Chọn kho";
+            document.getElementById("whLabel").innerText = checked.length ? checked.join(', ') : "Tất cả kho";
         }
         function switchTab(t, el) {
             document.querySelectorAll('.main-content').forEach(c => c.classList.remove('active'));
