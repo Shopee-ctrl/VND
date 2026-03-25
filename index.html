@@ -17,7 +17,7 @@
         .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); position: relative; margin-bottom: 25px; }
         .card-title { font-weight: bold; color: #1b2559; border-left: 4px solid var(--primary); padding-left: 15px; margin-bottom: 25px; text-transform: uppercase; font-size: 16px; }
         label { display: block; font-size: 11px; font-weight: 800; color: #1b2559; margin-bottom: 8px; text-transform: uppercase; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 12px; outline: none; font-size: 14px; font-weight: 600; color: #1b2559; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 12px; outline: none; font-size: 14px; font-weight: 600; color: #1b2559; box-sizing: border-box; }
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 15px; color: var(--text-gray); font-size: 11px; font-weight: 800; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 15px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #1b2559; font-weight: 600; }
@@ -46,10 +46,20 @@
                     <button class="btn-scan active" id="btnIn" onclick="setScan('IN')"><i class="fas fa-sign-in"></i> SCAN IN</button>
                     <button class="btn-scan" id="btnOut" onclick="setScan('OUT')"><i class="fas fa-sign-out-alt"></i> SCAN OUT</button>
                 </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-bottom: 20px;">
-                    <div><label>Project Code</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 15px;">
+                    <div><label>Warehouse</label>
                         <select id="recWH"><option value="VNDB">VNDB</option><option value="VNDL">VNDL</option></select>
                     </div>
+                    <div><label>Team</label>
+                        <select id="recTeam">
+                            <option value="Inventory">Inventory</option>
+                            <option value="Inbound">Inbound</option>
+                            <option value="FD">FD</option>
+                            <option value="OB">OB</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 20px;">
                     <div><label>Time</label><select id="timeSelect"></select></div>
                     <div><label>Shift</label>
                         <select id="recShift"><option value="Day">Day</option><option value="Night">Night</option></select>
@@ -106,14 +116,13 @@
     </div>
 
     <script>
-        const COMMIT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=915514461&single=true&output=csv';
         const STAFF_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=0&single=true&output=csv';
+        const COMMIT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=915514461&single=true&output=csv';
         let staffDb = [], commitDb = [], scanMode = "IN";
 
-        // Logic lưu trữ ID để chặn trùng và giữ data khi F5
         function getSavedIDs() {
             const today = new Date().toLocaleDateString();
-            const saved = localStorage.getItem('bpo_scanned_ids');
+            const saved = localStorage.getItem('bpo_scanned_ids_v2');
             if (saved) {
                 const data = JSON.parse(saved);
                 return data.date === today ? new Set(data.ids) : new Set();
@@ -125,7 +134,7 @@
 
         function syncStorage() {
             const data = { date: new Date().toLocaleDateString(), ids: Array.from(scannedToday) };
-            localStorage.setItem('bpo_scanned_ids', JSON.stringify(data));
+            localStorage.setItem('bpo_scanned_ids_v2', JSON.stringify(data));
         }
 
         function switchTab(t) {
@@ -154,21 +163,16 @@
 
         function handleConfirm() {
             const val = document.getElementById('wfmInput').value.trim();
-            
-            // CHẶN 1: Nếu rỗng thì nghỉ khỏe
             if(!val) return; 
 
-            // CHẶN 2: Tìm nhân viên, không thấy thì không làm gì hết (Không nhảy log bậy)
             const s = staffDb.find(r => r[8] === val);
             if(!s) return; 
 
-            // CHẶN 3: Đã quét rồi thì báo và chặn tiếp
             if(scannedToday.has(val)) {
                 alert("ID này quét rồi mày!");
                 return;
             }
 
-            // Mọi thứ OK mới thực hiện các bước dưới
             document.getElementById('resVendor').innerText = s[1]; 
             document.getElementById('resName').innerText = s[3];
             document.getElementById('resID').innerText = s[8]; 
@@ -176,11 +180,13 @@
             document.getElementById('resEmail').innerText = s[10];
             
             const now = new Date();
+            const team = document.getElementById('recTeam').value;
+
             document.getElementById('logList').insertAdjacentHTML('afterbegin', `
                 <tr>
                     <td>${now.toLocaleTimeString()}</td>
                     <td>${document.getElementById('recWH').value}</td>
-                    <td>${s[2] || 'N/A'}</td>
+                    <td>${team}</td>
                     <td>${s[1]}</td>
                     <td>${val}</td>
                     <td>${s[3]}</td>
@@ -189,7 +195,7 @@
                 </tr>`);
             
             scannedToday.add(val);
-            syncStorage(); // Lưu lại máy
+            syncStorage();
             document.getElementById('wfmInput').value = '';
         }
 
