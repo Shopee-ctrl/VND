@@ -21,6 +21,7 @@
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 15px; color: var(--text-gray); font-size: 11px; font-weight: 800; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 15px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #1b2559; font-weight: 600; }
+        .btn-search { background: var(--orange); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; height: 48px; box-shadow: 0 4px 10px rgba(255, 87, 34, 0.2); transition: 0.2s; }
         .btn-confirm { width: 100%; padding: 15px; border: none; border-radius: 12px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 15px; }
         .btn-group { display: flex; gap: 15px; margin-bottom: 20px; background: #f4f7fe; padding: 5px; border-radius: 12px; }
         .btn-scan { flex: 1; padding: 12px; border: none; border-radius: 10px; background: transparent; color: var(--text-gray); font-weight: bold; cursor: pointer; }
@@ -34,15 +35,16 @@
     <div class="sidebar">
         <div class="nav-item active" id="m-recording" onclick="switchTab('recording')"><i class="fas fa-microphone"></i> Recording BPO PT</div>
         <div class="nav-item" id="m-request" onclick="switchTab('request')"><i class="fas fa-wallet"></i> Total VND Request</div>
+        <div class="nav-item" id="m-fillrate" onclick="switchTab('fillrate')"><i class="fas fa-chart-line"></i> Fill rate</div>
     </div>
 
     <div id="recording" class="main-content active">
         <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 25px;">
             <div class="card">
-                <div class="card-title">INPUT WFM ID</div>
+                <div class="card-title">INPUT WFM ID <span style="color:var(--green); font-size: 10px; margin-left:10px;">🟢 DATA READY</span></div>
                 <div class="btn-group">
-                    <button class="btn-scan active" id="btnIn" onclick="setScan('IN')">SCAN IN</button>
-                    <button class="btn-scan" id="btnOut" onclick="setScan('OUT')">SCAN OUT</button>
+                    <button class="btn-scan active" id="btnIn" onclick="setScan('IN')"><i class="fas fa-sign-in"></i> SCAN IN</button>
+                    <button class="btn-scan" id="btnOut" onclick="setScan('OUT')"><i class="fas fa-sign-out-alt"></i> SCAN OUT</button>
                 </div>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 15px;">
                     <div><label>Warehouse</label>
@@ -76,6 +78,7 @@
                     <div><label>WFM ID</label><div class="info-box" id="resID">-</div></div>
                     <div><label>USER WFM ID</label><div class="info-box" id="resUserID">-</div></div>
                 </div>
+                <div style="margin-top:15px;"><label>WFM EMAIL</label><div class="info-box" id="resEmail">-</div></div>
             </div>
         </div>
 
@@ -90,39 +93,62 @@
     </div>
 
     <div id="request" class="main-content">
+        <div class="card">
+            <div class="card-title">FILTER DATA REQUEST</div>
+            <div style="display: flex; gap: 20px; align-items: flex-end;">
+                <div style="flex: 1;"><label>Filter by Date</label><input type="date" id="fDate"></div>
+                <div style="flex: 1;"><label>Warehouse</label>
+                    <select id="fWH"><option value="ALL">VNDB & VNDL (Tất cả)</option><option value="VNDB">VNDB</option><option value="VNDL">VNDL</option></select>
+                </div>
+                <div style="flex: 1;"><label>Team</label>
+                    <select id="fTeam"><option value="ALL">Tất cả Team</option><option value="Inbound">Inbound</option><option value="Outbound">Outbound</option><option value="Inventory">Inventory</option><option value="FD">FD</option><option value="Return">Return</option></select>
+                </div>
+                <button class="btn-search" onclick="searchRequest()"><i class="fas fa-search"></i> Search</button>
+            </div>
         </div>
+        <div class="card" style="padding:0;">
+            <div class="card-title" style="margin:25px 0 15px 25px;">TOTAL VND REQUEST</div>
+            <table>
+                <thead><tr><th>Date</th><th>Station</th><th>Vendor</th><th>Team</th><th>Task</th><th>Bắt đầu</th><th>Kết thúc</th><th>Booking</th></tr></thead>
+                <tbody id="reqBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="fillrate" class="main-content">
+        <div class="card"><div class="card-title">Fill rate content</div></div>
+    </div>
 
     <script>
         const STAFF_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=0&single=true&output=csv';
-        let staffDb = [], scanMode = "IN";
+        const COMMIT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=915514461&single=true&output=csv';
+        let staffDb = [], commitDb = [], scanMode = "IN";
 
-        // Tải lại Log cũ từ máy khi F5
-        function loadLogs() {
+        // Logic lưu Log vào máy để F5 không mất
+        function loadHistory() {
             const today = new Date().toLocaleDateString();
-            const saved = localStorage.getItem('bpo_logs_final');
+            const saved = localStorage.getItem('bpo_final_logs');
             if (saved) {
                 const parsed = JSON.parse(saved);
                 if (parsed.date === today) {
-                    parsed.data.forEach(html => {
-                        document.getElementById('logList').insertAdjacentHTML('beforeend', html);
-                    });
-                } else {
-                    localStorage.removeItem('bpo_logs_final');
-                }
+                    parsed.data.forEach(html => document.getElementById('logList').insertAdjacentHTML('beforeend', html));
+                } else { localStorage.removeItem('bpo_final_logs'); }
             }
         }
 
-        function saveLog(html) {
+        function saveHistory(html) {
             const today = new Date().toLocaleDateString();
-            const saved = localStorage.getItem('bpo_logs_final');
-            let logData = saved ? JSON.parse(saved).data : [];
-            logData.unshift(html); // Thêm vào đầu danh sách
-            localStorage.setItem('bpo_logs_final', JSON.stringify({ date: today, data: logData }));
+            const saved = localStorage.getItem('bpo_final_logs');
+            let data = saved ? JSON.parse(saved).data : [];
+            data.unshift(html);
+            localStorage.setItem('bpo_final_logs', JSON.stringify({ date: today, data: data }));
         }
 
         function switchTab(t) {
             document.querySelectorAll('.main-content').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById(t).classList.add('active');
+            document.getElementById('m-' + t).classList.add('active');
         }
 
         function setScan(m) {
@@ -132,53 +158,66 @@
         }
 
         async function init() {
-            const resp = await fetch(STAFF_URL);
-            staffDb = (await resp.text()).split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+            const [r1, r2] = await Promise.all([fetch(STAFF_URL), fetch(COMMIT_URL)]);
+            staffDb = (await r1.text()).split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+            commitDb = (await r2.text()).split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
             const sel = document.getElementById('timeSelect');
             for(let i=0; i<48; i++) {
                 let h = Math.floor(i/2).toString().padStart(2,'0'), m = (i%2==0?'00':'30');
                 sel.add(new Option(`${h}:${m}`, `${h}:${m}`));
             }
-            loadLogs(); // Chạy hàm này để hiện lại data cũ
+            loadHistory();
         }
 
         function handleConfirm() {
             const id = document.getElementById('wfmInput').value.trim();
-            if(!id) return;
+            if(!id) return; // Chặn rỗng
 
             const s = staffDb.find(r => r[8] === id);
-            if(!s) return;
+            if(!s) return; // Chặn sai ID
 
-            // Kiểm tra trùng trong máy
-            const saved = localStorage.getItem('bpo_logs_final');
-            if (saved) {
-                const logData = JSON.parse(saved).data;
-                if (logData.some(html => html.includes(`<td>${id}</td>`))) {
-                    alert("Mã này nhập rồi mày!");
-                    return;
-                }
+            // Chặn trùng
+            const logHtmls = localStorage.getItem('bpo_final_logs');
+            if (logHtmls && JSON.parse(logHtmls).data.some(h => h.includes(`<td>${id}</td>`))) {
+                alert("ID này quét rồi mày!"); return;
             }
 
             document.getElementById('resVendor').innerText = s[1]; 
             document.getElementById('resName').innerText = s[3];
             document.getElementById('resID').innerText = s[8]; 
             document.getElementById('resUserID').innerText = s[9];
+            document.getElementById('resEmail').innerText = s[10];
             
-            const logHtml = `
-                <tr>
-                    <td>${new Date().toLocaleTimeString()}</td>
-                    <td>${document.getElementById('recWH').value}</td>
-                    <td>${document.getElementById('recTeam').value}</td>
-                    <td>${s[1]}</td>
-                    <td>${id}</td>
-                    <td>${s[3]}</td>
-                    <td><span class="${scanMode==='IN'?'tag-in':'tag-out'}">${scanMode}</span></td>
-                    <td style="color:var(--green)">Thành công</td>
-                </tr>`;
+            const logRow = `<tr>
+                <td>${new Date().toLocaleTimeString()}</td>
+                <td>${document.getElementById('recWH').value}</td>
+                <td>${document.getElementById('recTeam').value}</td>
+                <td>${s[1]}</td>
+                <td>${id}</td>
+                <td>${s[3]}</td>
+                <td><span class="${scanMode==='IN'?'tag-in':'tag-out'}">${scanMode}</span></td>
+                <td style="color:var(--green)">Thành công</td>
+            </tr>`;
             
-            document.getElementById('logList').insertAdjacentHTML('afterbegin', logHtml);
-            saveLog(logHtml); // Lưu lại vào máy
+            document.getElementById('logList').insertAdjacentHTML('afterbegin', logRow);
+            saveHistory(logRow);
             document.getElementById('wfmInput').value = '';
+        }
+
+        function searchRequest() {
+            const dVal = document.getElementById('fDate').value;
+            const whVal = document.getElementById('fWH').value;
+            const tVal = document.getElementById('fTeam').value;
+            if (!dVal) { alert("Chọn Ngày!"); return; }
+            const targetDate = dVal.split('-').reverse().join('/');
+            const filtered = commitDb.slice(1).filter(r => {
+                return (r[1] === "VNDL" || r[1] === "VNDB") && r[0] === targetDate && (whVal === "ALL" || r[1] === whVal) && (tVal === "ALL" || r[3] === tVal);
+            });
+            const tbody = document.getElementById('reqBody');
+            tbody.innerHTML = filtered.length ? '' : '<tr><td colspan="8" style="text-align:center;">Không tìm thấy dữ liệu</td></tr>';
+            filtered.forEach(r => {
+                tbody.innerHTML += `<tr><td>${r[0]}</td><td style="color:var(--primary); font-weight:800">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td style="font-weight:800">${r[7]}</td></tr>`;
+            });
         }
 
         window.onload = init;
