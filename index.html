@@ -3,30 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BPO Recording System - Final Stable</title>
+    <title>BPO System - Full Features Restored</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --green: #10b981; --orange: #ff5722; --red: #ff4d4d; --text-gray: #a3abc1; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
+        
+        /* SIDEBAR */
         .sidebar { width: 260px; background: var(--sidebar); color: white; padding-top: 20px; flex-shrink: 0; }
         .nav-item { padding: 15px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; margin: 5px 15px; border-radius: 12px; cursor: pointer; transition: 0.3s; }
         .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(77, 68, 255, 0.3); }
         .nav-item i { margin-right: 15px; width: 20px; text-align: center; }
+
+        /* CONTENT AREA */
         .main-content { flex: 1; padding: 25px; overflow-y: auto; display: none; }
         .main-content.active { display: block; }
         .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); position: relative; margin-bottom: 25px; }
         .card-title { font-weight: bold; color: #1b2559; border-left: 4px solid var(--primary); padding-left: 15px; margin-bottom: 25px; text-transform: uppercase; font-size: 16px; }
+        
+        /* INPUTS */
         label { display: block; font-size: 11px; font-weight: 800; color: #1b2559; margin-bottom: 8px; text-transform: uppercase; }
         input, select { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 12px; outline: none; font-size: 14px; font-weight: 600; color: #1b2559; box-sizing: border-box; }
+        
+        /* BUTTONS */
         .btn-confirm { width: 100%; padding: 15px; border: none; border-radius: 12px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 15px; text-transform: uppercase; }
         .btn-sync { background: var(--red); color: white; border: none; padding: 10px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; position: absolute; bottom: 20px; right: 25px; box-shadow: 0 4px 15px rgba(255, 77, 77, 0.3); }
         .btn-remove { background: none; border: none; color: var(--red); cursor: pointer; font-size: 14px; }
+        
+        /* TABLES & BOXES */
         .info-box { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e0e5f2; font-size: 14px; color: #1b2559; font-weight: 700; min-height: 20px; }
-        table { width: 100%; border-collapse: collapse; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { text-align: left; padding: 15px; color: var(--text-gray); font-size: 11px; font-weight: 800; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 15px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #1b2559; font-weight: 600; }
         .tag-in { background: #e6fffa; color: var(--green); padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; }
-        .tag-out { background: #fff5f5; color: #f56565; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; }
     </style>
 </head>
 <body>
@@ -46,10 +55,7 @@
                     </div>
                     <div><label>Team</label>
                         <select id="recTeam">
-                            <option value="Inventory">Inventory</option>
-                            <option value="Inbound">Inbound</option>
-                            <option value="FD">FD</option>
-                            <option value="OB">OB</option>
+                            <option value="Inventory">Inventory</option><option value="Inbound">Inbound</option><option value="FD">FD</option><option value="OB">OB</option>
                         </select>
                     </div>
                 </div>
@@ -60,7 +66,7 @@
                     </div>
                 </div>
                 <label>BPO Staff ID (WFM ID)</label>
-                <input type="text" id="wfmInput" placeholder="Input WFM ID..." autocomplete="off">
+                <input type="text" id="wfmInput" placeholder="Input WFM ID..." onkeypress="if(event.key==='Enter') handleConfirm()">
                 <button class="btn-confirm" onclick="handleConfirm()">CONFIRM</button>
             </div>
             
@@ -76,7 +82,7 @@
             </div>
         </div>
 
-        <div class="card" style="padding:0; margin-top:10px; min-height: 350px;">
+        <div class="card" style="padding:0; margin-top:10px; min-height: 400px;">
             <div class="card-title" style="margin:25px 0 15px 25px;">DATA ENTRY LOGS</div>
             <table>
                 <thead>
@@ -99,15 +105,29 @@
                 <button class="btn-confirm" style="width: auto; padding: 12px 30px; margin: 0;">SEARCH</button>
             </div>
         </div>
-        <div class="card" style="padding:0;"><div class="card-title" style="margin:25px;">TOTAL VND REQUEST</div></div>
+        <div class="card" style="padding:0;">
+            <div class="card-title" style="margin:25px;">TOTAL VND REQUEST</div>
+            <table id="reqTable">
+                <thead>
+                    <tr><th>Date</th><th>WH</th><th>Vendor</th><th>Team</th><th>Task</th><th>Total Booking</th></tr>
+                </thead>
+                <tbody id="reqBody">
+                    <tr><td colspan="6" style="text-align:center; color:var(--text-gray);">Chưa có dữ liệu tìm kiếm</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div id="fillrate" class="main-content">
-        <div class="card"><div class="card-title">FILL RATE CONTENT</div></div>
+        <div class="card">
+            <div class="card-title">FILL RATE ANALYTICS</div>
+            <p style="color:var(--text-gray); font-weight:600;">Tính năng đang được cập nhật...</p>
+        </div>
     </div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZV0VxNhdDtdi4Nqxxp3bnCsP4jXPlgelHB9NxpcnuLt-15lMHl64ueHdRlZK3oBIt/exec';
+        // LINK WEB APP MỚI NHẤT CỦA MÀY
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzxr2FwfNAD1AggELTotCV_ShlDiBFvv-XfsKunrEp78v8fn5wujSFJZmx-BuhSyUsD/exec';
         const STAFF_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=0&single=true&output=csv';
         
         let staffDb = [], localLogs = [];
@@ -121,7 +141,7 @@
                     let h = Math.floor(i/2).toString().padStart(2,'0'), m = (i%2==0?'00':'30');
                     sel.add(new Option(`${h}:${m}`, `${h}:${m}`));
                 }
-            } catch (e) { console.error("Lỗi:", e); }
+            } catch (e) { console.error("Lỗi load data:", e); }
         }
 
         function switchTab(t) {
@@ -137,7 +157,7 @@
             if(!s) return alert("WFM ID không tồn tại!");
 
             const log = {
-                time: document.getElementById('timeSelect').value,
+                time: document.getElementById('timeSelect').value || new Date().toLocaleTimeString(),
                 wh: document.getElementById('recWH').value,
                 team: document.getElementById('recTeam').value,
                 vendor: s[1],
@@ -166,30 +186,35 @@
                     <td><span class="tag-in">IN</span></td>
                     <td style="color:${l.synced?'var(--green)':'orange'}">${l.synced?'Thành công':'Chờ Sync'}</td>
                     <td><button class="btn-remove" onclick="removeLog(${i})"><i class="fas fa-trash-alt"></i></button></td>
-                </tr>
-            `).join('');
+                </tr>`).join('');
         }
 
-        function removeLog(i) {
-            if(confirm("Xóa dòng này?")) { localLogs.splice(i, 1); renderTable(); }
-        }
+        function removeLog(i) { if(confirm("Mày muốn xóa dòng này thiệt hả?")) { localLogs.splice(i, 1); renderTable(); } }
 
+        // HÀM ĐẨY DATA VỀ GOOGLE SHEETS
         async function syncAllToSheet() {
             const pending = localLogs.filter(l => !l.synced);
-            if(!pending.length) return alert("Không có data mới!");
-            
+            if(!pending.length) return alert("Không có dữ liệu mới để đồng bộ!");
+
             for(let log of pending) {
+                const params = new URLSearchParams();
+                for (let key in log) { params.append(key, log[key]); }
+
                 try {
-                    await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(log) });
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: params.toString()
+                    });
                     log.synced = true;
-                } catch (e) {}
+                } catch (e) { console.error("Sync failed:", e); }
             }
             renderTable();
-            alert("Đã đồng bộ xong về Sheet 'DATA PT'!");
+            alert("Đã gửi lệnh đồng bộ! Kiểm tra Sheet 'DATA PT' của mày.");
         }
 
         window.onload = init;
-        document.getElementById('wfmInput').onkeypress = (e) => { if(e.key === 'Enter') handleConfirm(); };
     </script>
 </body>
 </html>
