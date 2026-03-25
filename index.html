@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO System - Bản Gốc Fix Lỗi</title>
+    <title>BPO System - Original Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; }
@@ -28,8 +28,8 @@
         .multiselect { position: relative; width: 100%; }
         .selectBox { position: relative; }
         .overSelect { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
-        #checkboxes { display: none; border: 1px #dadada solid; position: absolute; background-color: white; width: 100%; z-index: 10; border-radius: 12px; padding: 5px; }
-        #checkboxes label { display: block; padding: 5px; text-transform: none; font-size: 13px; cursor: pointer; }
+        #checkboxes { display: none; border: 1px solid #e0e5f2; position: absolute; background-color: white; width: 100%; z-index: 10; border-radius: 12px; padding: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        #checkboxes label { display: block; padding: 8px; text-transform: none; font-size: 13px; cursor: pointer; color: #1b2559; font-weight: 600; }
         #checkboxes label:hover { background-color: #f1f5f9; }
     </style>
 </head>
@@ -90,7 +90,6 @@
                         <div id="checkboxes">
                             <label><input type="checkbox" value="VNDB" onchange="updateLabel()"> VNDB</label>
                             <label><input type="checkbox" value="VNDL" onchange="updateLabel()"> VNDL</label>
-                            <label><input type="checkbox" value="VNDM" onchange="updateLabel()"> VNDM</label>
                         </div>
                     </div>
                 </div>
@@ -107,10 +106,15 @@
         </div>
     </div>
 
+    <div id="fillrate" class="main-content">
+        <div class="card"><div class="card-title">Fill rate performance</div></div>
+    </div>
+
     <script>
+        // LINK APPS SCRIPT
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwp1UEjOuWEaiCrx_BwjGnJRE9cOZLHHD1nBl6ANg4el5cuOHWH-XH-p5uHoBhQ9m4/exec';
         
-        // FIX LỖI F5 MẤT DATA: Lấy từ LocalStorage
+        // LOAD DATA TỪ LOCALSTORAGE ĐỂ F5 KHÔNG MẤT
         let logs = JSON.parse(localStorage.getItem('bpo_logs')) || [];
 
         window.onload = () => { render(); fillTime(); };
@@ -135,9 +139,14 @@
             if(!id) return;
             const item = { time: document.getElementById('time').value, wh: document.getElementById('wh').value, team: document.getElementById('team').value, vendor: "Agari", wfmId: id, name: "TRẦN BÙI ANH BẢO", type: "IN", synced: false };
             logs.unshift(item);
-            localStorage.setItem('bpo_logs', JSON.stringify(logs)); // Lưu vào máy
+            localStorage.setItem('bpo_logs', JSON.stringify(logs));
             
-            document.getElementById('resUserID').innerText = id; // BỎ US-
+            document.getElementById('resVendor').innerText = item.vendor;
+            document.getElementById('resName').innerText = item.name;
+            document.getElementById('resID').innerText = item.wfmId;
+            document.getElementById('resUserID').innerText = id; // ĐÃ BỎ US-
+            document.getElementById('resEmail').innerText = id + "@shopee.com";
+
             render();
             document.getElementById('wfmInput').value = "";
         }
@@ -145,28 +154,31 @@
         function render() {
             document.getElementById('logList').innerHTML = logs.map((l, i) => `
                 <tr><td>${l.time}</td><td>${l.wh}</td><td>${l.team}</td><td>${l.vendor}</td><td>${l.wfmId}</td><td>${l.name}</td>
-                <td>IN</td><td style="color:${l.synced?'green':'orange'}">${l.synced?'Thành công':'Chờ Sync'}</td>
-                <td><i class="fas fa-trash" onclick="deleteLog(${i})"></i></td></tr>`).join('');
+                <td>IN</td><td style="color:${l.synced?'#10b981':'orange'}">${l.synced?'Thành công':'Chờ Sync'}</td>
+                <td><i class="fas fa-trash" style="color:red;cursor:pointer" onclick="deleteLog(${i})"></i></td></tr>`).join('');
         }
 
-        function deleteLog(i) { logs.splice(i, 1); localStorage.setItem('bpo_logs', JSON.stringify(logs)); render(); }
+        function deleteLog(i) {
+            logs.splice(i, 1);
+            localStorage.setItem('bpo_logs', JSON.stringify(logs));
+            render();
+        }
 
         async function syncToSheet() {
             const pending = logs.filter(l => !l.synced);
-            if(!pending.length) return alert("Không có data mới");
+            if(!pending.length) return alert("Không có data mới!");
             for(let l of pending) {
                 const fd = new URLSearchParams();
                 Object.keys(l).forEach(k => fd.append(k, l[k]));
-                // Đảm bảo bắn về đúng tab DATA PT qua doPost trong script
+                // Đẩy về đúng Sheet DATA PT qua doPost
                 await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: fd.toString() });
                 l.synced = true;
             }
             localStorage.setItem('bpo_logs', JSON.stringify(logs));
             render();
-            alert("Đã bắn về Sheet DATA PT!");
+            alert("Đã đồng bộ lên DATA PT!");
         }
 
-        // CHỌN NHIỀU KHO
         let expanded = false;
         function showCheckboxes() {
             const cb = document.getElementById("checkboxes");
@@ -182,14 +194,13 @@
             const tbody = document.getElementById('reqBody');
             const selectedWhs = Array.from(document.querySelectorAll('#checkboxes input:checked')).map(i => i.value);
             const teamF = document.getElementById('reqTeam').value;
-            
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Đang lấy dữ liệu...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Đang tải...</td></tr>';
             try {
                 const res = await fetch(SCRIPT_URL);
-                const data = await res.json(); // Lấy từ Vendor Commit
+                const data = await res.json();
                 const filtered = data.filter(r => (selectedWhs.length === 0 || selectedWhs.includes(r[1])) && (teamF === 'All' || r[3] === teamF));
                 tbody.innerHTML = filtered.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`).join('');
-            } catch (e) { tbody.innerHTML = '<tr><td colspan="6" style="color:red">Lỗi tải dữ liệu!</td></tr>'; }
+            } catch (e) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red">Lỗi tải dữ liệu!</td></tr>'; }
         }
     </script>
 </body>
