@@ -41,10 +41,10 @@
     <div id="recording" class="main-content active">
         <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 25px;">
             <div class="card">
-                <div class="card-title">INPUT WFM ID <span style="color:var(--green); font-size: 10px; margin-left:10px;">🟢 DATA READY</span></div>
+                <div class="card-title">INPUT WFM ID</div>
                 <div class="btn-group">
-                    <button class="btn-scan active" id="btnIn" onclick="setScan('IN')"><i class="fas fa-sign-in"></i> SCAN IN</button>
-                    <button class="btn-scan" id="btnOut" onclick="setScan('OUT')"><i class="fas fa-sign-out-alt"></i> SCAN OUT</button>
+                    <button class="btn-scan active" id="btnIn" onclick="setScan('IN')">SCAN IN</button>
+                    <button class="btn-scan" id="btnOut" onclick="setScan('OUT')">SCAN OUT</button>
                 </div>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom: 15px;">
                     <div><label>Warehouse</label>
@@ -103,7 +103,7 @@
                 <div style="flex: 1;"><label>Team</label>
                     <select id="fTeam"><option value="ALL">Tất cả Team</option><option value="Inbound">Inbound</option><option value="Outbound">Outbound</option><option value="Inventory">Inventory</option><option value="FD">FD</option><option value="Return">Return</option></select>
                 </div>
-                <button class="btn-search" onclick="searchRequest()"><i class="fas fa-search"></i> Search</button>
+                <button class="btn-search" onclick="searchRequest()">Search</button>
             </div>
         </div>
         <div class="card" style="padding:0;">
@@ -127,21 +127,21 @@
         // Logic lưu Log vào máy để F5 không mất
         function loadHistory() {
             const today = new Date().toLocaleDateString();
-            const saved = localStorage.getItem('bpo_final_logs');
+            const saved = localStorage.getItem('bpo_final_logs_v5');
             if (saved) {
                 const parsed = JSON.parse(saved);
                 if (parsed.date === today) {
                     parsed.data.forEach(html => document.getElementById('logList').insertAdjacentHTML('beforeend', html));
-                } else { localStorage.removeItem('bpo_final_logs'); }
+                }
             }
         }
 
         function saveHistory(html) {
             const today = new Date().toLocaleDateString();
-            const saved = localStorage.getItem('bpo_final_logs');
+            const saved = localStorage.getItem('bpo_final_logs_v5');
             let data = saved ? JSON.parse(saved).data : [];
             data.unshift(html);
-            localStorage.setItem('bpo_final_logs', JSON.stringify({ date: today, data: data }));
+            localStorage.setItem('bpo_final_logs_v5', JSON.stringify({ date: today, data: data }));
         }
 
         function switchTab(t) {
@@ -171,15 +171,13 @@
 
         function handleConfirm() {
             const id = document.getElementById('wfmInput').value.trim();
-            if(!id) return; // Chặn rỗng
-
+            if(!id) return;
             const s = staffDb.find(r => r[8] === id);
-            if(!s) return; // Chặn sai ID
+            if(!s) return;
 
-            // Chặn trùng
-            const logHtmls = localStorage.getItem('bpo_final_logs');
-            if (logHtmls && JSON.parse(logHtmls).data.some(h => h.includes(`<td>${id}</td>`))) {
-                alert("ID này quét rồi mày!"); return;
+            const saved = localStorage.getItem('bpo_final_logs_v5');
+            if (saved && JSON.parse(saved).data.some(h => h.includes(`<td>${id}</td>`))) {
+                alert("ID này quét rồi!"); return;
             }
 
             document.getElementById('resVendor').innerText = s[1]; 
@@ -188,17 +186,7 @@
             document.getElementById('resUserID').innerText = s[9];
             document.getElementById('resEmail').innerText = s[10];
             
-            const logRow = `<tr>
-                <td>${new Date().toLocaleTimeString()}</td>
-                <td>${document.getElementById('recWH').value}</td>
-                <td>${document.getElementById('recTeam').value}</td>
-                <td>${s[1]}</td>
-                <td>${id}</td>
-                <td>${s[3]}</td>
-                <td><span class="${scanMode==='IN'?'tag-in':'tag-out'}">${scanMode}</span></td>
-                <td style="color:var(--green)">Thành công</td>
-            </tr>`;
-            
+            const logRow = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${document.getElementById('recWH').value}</td><td>${document.getElementById('recTeam').value}</td><td>${s[1]}</td><td>${id}</td><td>${s[3]}</td><td><span class="${scanMode==='IN'?'tag-in':'tag-out'}">${scanMode}</span></td><td style="color:var(--green)">Thành công</td></tr>`;
             document.getElementById('logList').insertAdjacentHTML('afterbegin', logRow);
             saveHistory(logRow);
             document.getElementById('wfmInput').value = '';
