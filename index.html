@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO System - Restored Stable Version</title>
+    <title>BPO System - Restored Logic</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; }
@@ -119,7 +119,6 @@
             try {
                 const res = await fetch(CSV_URL);
                 const text = await res.text();
-                // Tách dòng CSV chuẩn xác
                 rawDataCache = text.split('\n').map(row => row.split(',').map(cell => cell.replace(/^"|"$/g, '').trim()));
             } catch(e) { console.error("CSV Load Fail"); }
         }
@@ -127,7 +126,7 @@
         function handleConfirm() {
             const idInput = document.getElementById('wfmInput').value.trim().toUpperCase();
             if(!idInput) return;
-            // Dò mã WFM cột I (Index 8)
+            // Tra mã WFM cột I (Index 8)
             const found = rawDataCache.find(r => r[8] && r[8].toUpperCase() === idInput);
             if(found) {
                 document.getElementById('resVendor').innerText = found[1] || "-";
@@ -157,19 +156,23 @@
                 <td><i class="fas fa-trash" style="color:red;cursor:pointer" onclick="logs.splice(${i},1);localStorage.setItem('bpo_logs',JSON.stringify(logs));render()"></i></td></tr>`).join('');
         }
 
-        // KHÔI PHỤC LẠI LOGIC LỌC CŨ CHO TAB 2
+        // --- KHÔI PHỤC LẠI LOGIC LỌC CHUẨN MÀY MUỐN ---
         function loadRequestData() {
             const dVal = document.getElementById('reqDate').value;
             const whF = document.getElementById('reqWh').value;
             const teamF = document.getElementById('reqTeam').value;
 
+            // Tao trả lại logic so sánh trực tiếp không qua format để khớp với CSV của mày
             const filtered = rawDataCache.filter(r => {
                 if(!r[0]) return false;
-                // Chuẩn hóa ngày CSV sang YYYY-MM-DD để so sánh
-                let parts = r[0].split('/');
-                let csvDate = parts.length === 3 ? `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}` : r[0];
-                
-                const matchDate = csvDate === dVal;
+                // Nếu CSV là DD/MM/YYYY mà input là YYYY-MM-DD thì tao đảo nhẹ cho khớp
+                let rowDate = r[0];
+                if(rowDate.includes('/')) {
+                    let p = rowDate.split('/');
+                    rowDate = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+                }
+
+                const matchDate = rowDate.includes(dVal);
                 const matchWh = whF === "All" || r[1] === whF;
                 const matchTeam = teamF === "All" || r[3] === teamF;
                 return matchDate && matchWh && matchTeam;
@@ -177,10 +180,9 @@
 
             document.getElementById('reqBody').innerHTML = filtered.map(r => `
                 <tr><td>${r[0]||''}</td><td>${r[1]||''}</td><td>${r[2]||''}</td><td>${r[3]||''}</td><td>${r[4]||''}</td><td>${r[8]||''}</td><td>${r[9]||''}</td></tr>`
-            ).join('') || '<tr><td colspan="7" style="text-align:center">Không tìm thấy dữ liệu khớp</td></tr>';
+            ).join('') || '<tr><td colspan="7" style="text-align:center">Dữ liệu trống</td></tr>';
         }
 
-        // KHÔI PHỤC HÀM SYNC ĐẨY DATA THẬT
         async function syncToSheet() {
             const pending = logs.filter(l => !l.synced);
             if(pending.length === 0) { alert("Không có gì để sync!"); return; }
@@ -189,18 +191,13 @@
                 try {
                     const formData = new URLSearchParams();
                     for (const key in l) formData.append(key, l[key]);
-                    
-                    await fetch(SCRIPT_URL, { 
-                        method: 'POST', 
-                        mode: 'no-cors', 
-                        body: formData 
-                    });
+                    await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: formData });
                     l.synced = true;
-                } catch(e) { console.error("Sync error:", e); }
+                    l.status = "Thành công";
+                } catch(e) { console.error(e); }
             }
             localStorage.setItem('bpo_logs', JSON.stringify(logs));
-            render(); 
-            alert("Đã đẩy dữ liệu thành công lên hệ thống!");
+            render(); alert("Sync hoàn tất!");
         }
 
         function switchTab(t, el) {
