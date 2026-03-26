@@ -5,7 +5,7 @@
     <title>BPO SYSTEM - FULL RECOVERY</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; }
+        :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; --danger: #ff5252; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
         .sidebar { width: 260px; background: var(--sidebar); color: white; padding-top: 20px; flex-shrink: 0; }
         .nav-item { padding: 15px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); margin: 5px 15px; border-radius: 12px; cursor: pointer; transition: 0.3s; font-size: 14px; }
@@ -17,8 +17,10 @@
         .card-title { font-weight: bold; color: #1b2559; border-left: 4px solid var(--primary); padding-left: 15px; margin-bottom: 20px; text-transform: uppercase; font-size: 14px; }
         label { display: block; font-size: 11px; font-weight: 800; color: #1b2559; margin-bottom: 8px; text-transform: uppercase; }
         input, select { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 12px; font-weight: 600; color: #1b2559; box-sizing: border-box; margin-bottom: 10px; }
-        .btn-search { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        .btn-sync { background: #ff5252; color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; position: absolute; bottom: 20px; right: 25px; }
+        .btn-search { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-right: 5px; }
+        .btn-sync { background: var(--danger); color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; position: absolute; bottom: 20px; right: 25px; }
+        .btn-del { color: var(--danger); border: none; background: none; cursor: pointer; font-size: 16px; }
+        .btn-download { background: #2ecc71; color: white; border: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; }
         table { width: 100%; border-collapse: collapse; min-width: 1000px; }
         th { text-align: left; padding: 12px; color: var(--text-gray); font-size: 10px; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid #f8fafc; font-size: 12px; color: #1b2559; font-weight: 600; }
@@ -38,7 +40,7 @@
                 <div class="card-title">INPUT WFM ID</div>
                 <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:12px;">
                     <div style="grid-column: span 2;"><label>DATE SYNC</label><input type="date" id="inputDate"></div>
-                    <div><label>WAREHOUSE</label><select id="wh"><option>VNDB</option><option>VNDL</option></select></div>
+                    <div><label>WH</label><select id="wh"><option>VNDB</option><option>VNDL</option></select></div>
                     <div><label>TEAM</label><select id="team"><option>Inventory</option><option>Inbound</option><option>FD</option><option>OB</option></select></div>
                     <div><label>TIME</label><select id="time"></select></div>
                     <div><label>SHIFT</label><select id="shift"><option>Day</option><option>Night</option></select></div>
@@ -47,18 +49,18 @@
                 <button class="btn-search" style="width:100%" onclick="handleConfirm()">CONFIRM</button>
             </div>
             <div class="card">
-                <div class="card-title">BPO PT INFORMATION</div>
+                <div class="card-title">INFO</div>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                     <div><label>VENDOR</label><div class="info-box" id="resVendor">-</div></div>
-                    <div><label>FULL NAME</label><div class="info-box" id="resName">-</div></div>
-                    <div><label>WFM ID</label><div class="info-box" id="resID">-</div></div>
+                    <div><label>NAME</label><div class="info-box" id="resName">-</div></div>
+                    <div><label>ID</label><div class="info-box" id="resID">-</div></div>
                 </div>
-                <label>WFM EMAIL</label><div class="info-box" id="resEmail">-</div>
+                <label>EMAIL</label><div class="info-box" id="resEmail">-</div>
             </div>
         </div>
         <div class="card" style="padding:0; min-height:350px;">
             <table>
-                <thead><tr><th>DATE</th><th>TIME</th><th>WH</th><th>TEAM</th><th>VENDOR</th><th>WFM ID</th><th>FULL NAME</th><th>STATUS</th></tr></thead>
+                <thead><tr><th>DATE</th><th>TIME</th><th>WH</th><th>TEAM</th><th>VENDOR</th><th>ID</th><th>NAME</th><th>ACTION</th><th>STATUS</th></tr></thead>
                 <tbody id="logList"></tbody>
             </table>
             <button class="btn-sync" onclick="syncToSheet()">SYNC TO SHEET</button>
@@ -71,7 +73,7 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: flex-end;">
                 <div><label>Date</label><input type="date" id="reqDate"></div>
                 <div><label>Warehouse</label><select id="reqWh"><option value="All">All WH</option><option>VNDB</option><option>VNDL</option></select></div>
-                <div><label>Team</label><select id="reqTeam"><option value="All">All Team</option><option>Inbound</option><option>Inventory</option></select></div>
+                <div><label>Team</label><select id="reqTeam"><option value="All">All Team</option><option>Inbound</option><option>Inventory</option><option>FD</option><option>OB</option></select></div>
                 <button class="btn-search" onclick="loadRequestData()">SEARCH</button>
             </div>
         </div>
@@ -86,9 +88,10 @@
     <div id="database" class="main-content">
         <div class="card">
             <div class="card-title">BPO MASTER DATABASE</div>
-            <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 15px;">
-                <input type="date" id="dbDate">
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 15px; align-items: flex-end;">
+                <div><label>Date Filter</label><input type="date" id="dbDate"></div>
                 <button class="btn-search" onclick="loadSharedDB()">REFRESH</button>
+                <button class="btn-download" onclick="downloadDB()"><i class="fas fa-download"></i> DOWNLOAD CSV</button>
             </div>
         </div>
         <div class="card" style="padding:0;">
@@ -104,7 +107,7 @@
         const CSV_PT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=0&single=true&output=csv';
         const CSV_COMMIT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=915514461&single=true&output=csv';
 
-        let dataPT = [], dataCommit = [], logs = JSON.parse(localStorage.getItem('bpo_logs')) || [];
+        let dataPT = [], dataCommit = [], logs = JSON.parse(localStorage.getItem('bpo_logs')) || [], masterData = [];
 
         window.onload = () => {
             const today = new Date().toISOString().split('T')[0];
@@ -143,12 +146,24 @@
             }
         }
 
+        function deleteLog(index) {
+            logs.splice(index, 1);
+            localStorage.setItem('bpo_logs', JSON.stringify(logs));
+            renderLogs();
+        }
+
         function renderLogs() {
-            document.getElementById('logList').innerHTML = logs.map(l => `<tr><td>${l.date}</td><td>${l.time}</td><td>${l.wh}</td><td>${l.team}</td><td>${l.vendor}</td><td>${l.wfmId}</td><td>${l.name}</td><td style="color:${l.synced?'green':'orange'}">${l.synced?'OK':'Wait'}</td></tr>`).join('');
+            document.getElementById('logList').innerHTML = logs.map((l, idx) => `
+                <tr>
+                    <td>${l.date}</td><td>${l.time}</td><td>${l.wh}</td><td>${l.team}</td><td>${l.vendor}</td><td>${l.wfmId}</td><td>${l.name}</td>
+                    <td>${l.synced ? '' : `<button class="btn-del" onclick="deleteLog(${idx})"><i class="fas fa-trash"></i></button>`}</td>
+                    <td style="color:${l.synced?'green':'orange'}">${l.synced?'OK':'Wait'}</td>
+                </tr>`).join('');
         }
 
         async function syncToSheet() {
             const pending = logs.filter(l => !l.synced);
+            if(pending.length === 0) return alert("Không có gì để sync!");
             for(let l of pending) {
                 const params = new URLSearchParams(l);
                 await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: params });
@@ -156,15 +171,25 @@
             }
             localStorage.setItem('bpo_logs', JSON.stringify(logs));
             renderLogs();
-            alert("Sync thành công!");
+            alert("Sync hoàn tất!");
         }
 
         function loadRequestData() {
             const dVal = document.getElementById('reqDate').value;
+            const whVal = document.getElementById('reqWh').value;
+            const teamVal = document.getElementById('reqTeam').value;
+            
             const [y, m, d] = dVal.split('-');
             const dateStr = `${d}/${m}/${y}`;
-            const filtered = dataCommit.filter(r => r[0] === dateStr);
-            document.getElementById('reqBody').innerHTML = filtered.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[8]}</td><td>${r[9]}</td></tr>`).join('') || '<tr><td colspan="7">No data</td></tr>';
+            
+            const filtered = dataCommit.filter(r => {
+                const matchDate = r[0] === dateStr;
+                const matchWh = whVal === "All" || r[1] === whVal;
+                const matchTeam = teamVal === "All" || r[3] === teamVal;
+                return matchDate && matchWh && matchTeam;
+            });
+            
+            document.getElementById('reqBody').innerHTML = filtered.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[8]}</td><td>${r[9]}</td></tr>`).join('') || '<tr><td colspan="7">No data found</td></tr>';
         }
 
         async function loadSharedDB() {
@@ -173,10 +198,25 @@
             body.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
             try {
                 const res = await fetch(SCRIPT_URL);
-                const data = await res.json();
-                const filtered = data.filter(r => r.date === target);
+                masterData = await res.json();
+                const filtered = masterData.filter(r => r.date === target);
                 body.innerHTML = filtered.map(r => `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.wh}</td><td>${r.team}</td><td>${r.vendor}</td><td>${r.wfmId}</td><td>${r.name}</td></tr>`).join('') || '<tr><td colspan="7">Trống</td></tr>';
             } catch(e) { body.innerHTML = '<tr><td colspan="7">Lỗi tải dữ liệu!</td></tr>'; }
+        }
+
+        function downloadDB() {
+            if(masterData.length === 0) return alert("Hãy nhấn Refresh để tải dữ liệu trước!");
+            let csv = "DATE,TIME,WH,TEAM,VENDOR,WFM ID,NAME\n";
+            masterData.forEach(r => {
+                csv += `${r.date},${r.time},${r.wh},${r.team},${r.vendor},${r.wfmId},${r.name}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", `BPO_Database_${new Date().toLocaleDateString()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function switchTab(t, el) {
@@ -184,7 +224,7 @@
             document.getElementById(t).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             el.classList.add('active');
-            if(t === 'database') loadSharedDB();
+            if(t === 'database' && masterData.length === 0) loadSharedDB();
         }
     </script>
 </body>
