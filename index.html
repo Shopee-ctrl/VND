@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO System</title>
+    <title>BPO System - Final Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; }
@@ -60,7 +60,7 @@
         </div>
         <div class="card" style="padding:0; min-height:350px;">
             <div class="card-title" style="margin:25px 0 15px 25px;">DATA ENTRY LOGS</div>
-            <table id="logTable">
+            <table>
                 <thead><tr><th>DATE</th><th>TIME</th><th>WH</th><th>TEAM</th><th>VENDOR</th><th>WFM ID</th><th>FULL NAME</th><th>STATUS</th><th>ACTION</th></tr></thead>
                 <tbody id="logList"></tbody>
             </table>
@@ -74,7 +74,7 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: flex-end;">
                 <div><label>Date</label><input type="date" id="reqDate"></div>
                 <div><label>Warehouse</label><select id="reqWh"><option value="All">All WH</option><option>VNDB</option><option>VNDL</option></select></div>
-                <div><label>Team</label><select id="reqTeam"><option value="All">All Team</option><option>Inbound</option><option>Outbound</option></select></div>
+                <div><label>Team</label><select id="reqTeam"><option value="All">All Team</option><option>Inbound</option><option>Outbound</option><option>Inventory</option><option>FD</option><option>OB</option></select></div>
                 <button class="btn-search" onclick="loadRequestData()">SEARCH</button>
             </div>
         </div>
@@ -104,7 +104,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsyJbNAZFxvEbtuWHwr6DE402Ju2FReVT4l8c1B0bVDZ63oitpQ_AZazILDnf63str/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzHRfhjkTNk3zP0gsp3hXrOibmvxqy1j0-AFhi-7_0Tq95sTUbBupzQ34a6qw7h7Ws/exec';
         const CSV_PT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=0&single=true&output=csv';
         const CSV_COMMIT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=915514461&single=true&output=csv';
 
@@ -162,7 +162,7 @@
                     for(let key in l) { formData.append(key, l[key]); }
                     await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: formData });
                     l.synced = true;
-                } catch (e) { console.error(e); break; }
+                } catch (e) { break; }
             }
             localStorage.setItem('bpo_logs', JSON.stringify(logs));
             render();
