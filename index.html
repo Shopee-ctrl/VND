@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO System - Final Version</title>
+    <title>BPO System - Final Fixed</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; }
@@ -36,7 +36,6 @@
     <div class="sidebar">
         <div class="nav-item active" onclick="switchTab('recording', this)"><i class="fas fa-microphone"></i> Recording BPO PT</div>
         <div class="nav-item" onclick="switchTab('request', this)"><i class="fas fa-wallet"></i> Total VND Request</div>
-        <div class="nav-item" onclick="switchTab('fillrate', this)"><i class="fas fa-chart-line"></i> Fill rate</div>
     </div>
 
     <div id="recording" class="main-content active">
@@ -80,7 +79,7 @@
         <div class="card">
             <div class="card-title">FILTER DATA REQUEST</div>
             <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr 100px; gap: 15px; align-items: flex-end;">
-                <div><label>Date</label><input type="date" id="reqDate" value="2026-03-25"></div>
+                <div><label>Date</label><input type="date" id="reqDate" value="2026-03-26"></div>
                 <div><label>Warehouse</label>
                     <div class="multiselect">
                         <div class="selectBox" onclick="showCheckboxes()"><select><option id="whLabel">Tất cả kho</option></select><div class="overSelect"></div></div>
@@ -132,7 +131,8 @@
                 const d = new Date(val);
                 if(!isNaN(d)) {
                     if(isTime) return d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit', hour12: false});
-                    return d.toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric'});
+                    // Sửa định dạng ngày hiển thị dd/mm/yyyy
+                    return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
                 }
             }
             return val;
@@ -179,19 +179,22 @@
 
         function loadRequestData() {
             const tbody = document.getElementById('reqBody');
-            const dateF = document.getElementById('reqDate').value;
+            const dateF = document.getElementById('reqDate').value; // YYYY-MM-DD từ input
             const whs = Array.from(document.querySelectorAll('#checkboxes input:checked')).map(i => i.value);
             const teamF = document.getElementById('reqTeam').value;
 
             const filtered = rawDataCache.filter(r => {
-                const rDate = r[0].split('T')[0];
-                const matchDate = !dateF || rDate === dateF;
-                const matchWh = whs.length === 0 ? (r[1] === 'VNDB' || r[1] === 'VNDL') : whs.includes(r[1]);
+                // FIX TRIỆT ĐỂ LỖI NGÀY: So khớp chính xác chuỗi YYYY-MM-DD
+                const dObj = new Date(r[0]);
+                const rDateStr = dObj.getFullYear() + '-' + String(dObj.getMonth() + 1).padStart(2, '0') + '-' + String(dObj.getDate()).padStart(2, '0');
+                
+                const matchDate = !dateF || rDateStr === dateF;
+                const matchWh = whs.length === 0 || whs.includes(r[1]);
                 const matchTeam = teamF === 'All' || r[3] === teamF;
                 return matchDate && matchWh && matchTeam;
             });
 
-            // Lấy 9 cột (Bỏ cột index 7 - cột H trống)
+            // Hiển thị 9 cột (bỏ cột H trống)
             tbody.innerHTML = filtered.map(r => `
                 <tr>
                     <td>${formatVal(r[0])}</td>
@@ -203,7 +206,7 @@
                     <td>${formatVal(r[6], true)}</td>
                     <td>${r[8] || ''}</td>
                     <td>${r[9] || ''}</td>
-                </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;">Không có data</td></tr>';
+                </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;">Không có data khớp bộ lọc</td></tr>';
         }
 
         let expanded = false;
