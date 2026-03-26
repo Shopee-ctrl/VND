@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO System - Smart Filter</title>
+    <title>BPO System - No Data Loss</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; }
@@ -102,6 +102,8 @@
 
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwp1UEjOuWEaiCrx_BwjGnJRE9cOZLHHD1nBl6ANg4el5cuOHWH-XH-p5uHoBhQ9m4/exec';
+        
+        // F5 KHÔNG MẤT DỮ LIỆU NHỜ LOCALSTORAGE
         let logs = JSON.parse(localStorage.getItem('bpo_logs')) || [];
         let rawDataCache = [];
 
@@ -115,7 +117,6 @@
             }
         }
 
-        // Định dạng ngày DD/MM/YYYY chuẩn như file sheet
         function formatDateDisplay(str) {
             if(!str) return "-";
             const d = new Date(str);
@@ -129,7 +130,7 @@
             const item = { time: document.getElementById('time').value, wh: document.getElementById('wh').value, team: document.getElementById('team').value, vendor: "Agari", wfmId: id, name: "TRẦN BÙI ANH BẢO", type: "IN", synced: false };
             logs.unshift(item);
             localStorage.setItem('bpo_logs', JSON.stringify(logs));
-            document.getElementById('resUserID').innerText = id; 
+            document.getElementById('resUserID').innerText = id; //
             render();
             document.getElementById('wfmInput').value = "";
         }
@@ -151,7 +152,7 @@
                 }
                 localStorage.setItem('bpo_logs', JSON.stringify(logs));
                 render();
-                alert("Đã đồng bộ lên DATA PT!"); 
+                alert("Đã đồng bộ lên DATA PT!"); //
             } catch(e) { alert("Lỗi kết nối!"); }
         }
 
@@ -159,7 +160,7 @@
             try {
                 const res = await fetch(SCRIPT_URL);
                 rawDataCache = await res.json();
-            } catch(e) { console.log("Cache error"); }
+            } catch(e) { console.log("Cache failed"); }
         }
 
         function loadRequestData() {
@@ -168,13 +169,11 @@
             const whs = Array.from(document.querySelectorAll('#checkboxes input:checked')).map(i => i.value);
             const teamF = document.getElementById('reqTeam').value;
 
-            // Logic lọc thông minh
             const filtered = rawDataCache.filter(r => {
                 const rDate = r[0].split('T')[0];
                 const matchDate = !dateF || rDate === dateF;
-                // Nếu whs trống thì lấy hết VNDB, VNDL
+                // Nếu không chọn kho thì lấy cả VNDB/VNDL
                 const matchWh = whs.length === 0 ? (r[1] === 'VNDB' || r[1] === 'VNDL') : whs.includes(r[1]);
-                // Nếu teamF là 'All' thì lấy hết các team
                 const matchTeam = teamF === 'All' || r[3] === teamF;
                 return matchDate && matchWh && matchTeam;
             });
