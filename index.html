@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO System - Only VNDL VNDB</title>
+    <title>BPO System - Final Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; }
@@ -118,7 +118,9 @@
         window.onload = () => { 
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('inputDate').value = today;
-            render(); fillTime(); preloadData(); 
+            fillTime(); 
+            render(); 
+            preloadData(); 
         };
 
         function fillTime() {
@@ -133,7 +135,7 @@
             try {
                 const res = await fetch(SCRIPT_URL);
                 rawDataCache = await res.json();
-            } catch(e) { console.log("Cache failed"); }
+            } catch(e) { console.error("Data failed"); }
         }
 
         function formatVal(val, isTime = false) {
@@ -171,7 +173,9 @@
         }
 
         function render() {
-            document.getElementById('logList').innerHTML = logs.map((l, i) => `
+            const logList = document.getElementById('logList');
+            if(!logList) return;
+            logList.innerHTML = logs.map((l, i) => `
                 <tr><td>${l.date}</td><td>${l.time}</td><td>${l.wh}</td><td>${l.team}</td><td>${l.vendor}</td><td>${l.wfmId}</td><td>${l.name}</td>
                 <td style="color:${l.synced?'#10b981':'orange'}">${l.synced?'Thành công':'Chờ Sync'}</td>
                 <td><i class="fas fa-trash" style="color:red;cursor:pointer" onclick="logs.splice(${i},1);localStorage.setItem('bpo_logs',JSON.stringify(logs));render()"></i></td></tr>`).join('');
@@ -179,6 +183,7 @@
 
         async function syncToSheet() {
             const pending = logs.filter(l => !l.synced);
+            if(pending.length === 0) return alert("Hết data rồi!");
             for(let l of pending) {
                 await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(l) });
                 l.synced = true;
@@ -194,15 +199,15 @@
             const whs = Array.from(document.querySelectorAll('#checkboxes input:checked')).map(i => i.value);
             const teamF = document.getElementById('reqTeam').value;
 
-            const targetDate = new Date(dateInput);
-            targetDate.setHours(0, 0, 0, 0);
+            if(!dateInput) return alert("Chọn ngày!");
+
+            const d = new Date(dateInput);
+            const targetDay = d.getDate(), targetMonth = d.getMonth(), targetYear = d.getFullYear();
 
             const filtered = rawDataCache.filter(r => {
                 if(!r[0]) return false;
-                const sheetDate = new Date(r[0]);
-                sheetDate.setHours(0, 0, 0, 0);
-                
-                const matchDate = sheetDate.getTime() === targetDate.getTime();
+                const sDate = new Date(r[0]);
+                const matchDate = sDate.getDate() === targetDay && sDate.getMonth() === targetMonth && sDate.getFullYear() === targetYear;
                 const matchWh = whs.length === 0 || whs.includes(r[1]);
                 const matchTeam = teamF === 'All' || r[3] === teamF;
                 return matchDate && matchWh && matchTeam;
@@ -217,7 +222,11 @@
         }
 
         let expanded = false;
-        function showCheckboxes() { const cb = document.getElementById("checkboxes"); cb.style.display = expanded ? "none" : "block"; expanded = !expanded; }
+        function showCheckboxes() { 
+            const cb = document.getElementById("checkboxes"); 
+            cb.style.display = expanded ? "none" : "block"; 
+            expanded = !expanded; 
+        }
         function updateLabel() {
             const checked = Array.from(document.querySelectorAll('#checkboxes input:checked')).map(i => i.value);
             document.getElementById("whLabel").innerText = checked.length ? checked.join(', ') : "Tất cả kho";
