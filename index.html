@@ -40,7 +40,7 @@
                 <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:12px;">
                     <div style="grid-column: span 2;"><label>DATE SYNC</label><input type="date" id="inputDate" onchange="loadSharedDB()"></div>
                     <div><label>WH</label><select id="wh"><option>VNDB</option><option>VNDL</option></select></div>
-                    <div><label>TEAM</label><select id="team"><option>Inventory</option><option>Inbound</option><option>FD</option><option>OB</option></select></div>
+                    <div><label>TEAM</label><select id="team"><option>Inbound</option><option>Inventory</option><option>FD</option><option>OB</option></select></div>
                     <div><label>TIME</label><select id="time"></select></div>
                     <div><label>SHIFT</label><select id="shift"><option>Day</option><option>Night</option></select></div>
                 </div>
@@ -49,11 +49,12 @@
             </div>
             <div class="card">
                 <div class="card-title">INFO</div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap:12px;">
                     <div><label>VENDOR</label><div class="info-box" id="resVendor">-</div></div>
                     <div><label>NAME</label><div class="info-box" id="resName">-</div></div>
-                    <div><label>ID</label><div class="info-box" id="resID">-</div></div>
                 </div>
+                <label>ID</label><div class="info-box" id="resID" style="width: 50%;">-</div>
+                <label>EMAIL</label><div class="info-box" id="resEmail">-</div>
                 <label>STATUS UPDATE</label><div class="info-box" id="resStatus">READY</div>
             </div>
         </div>
@@ -143,16 +144,17 @@
                     team: document.getElementById('team').value,
                     vendor: found[1],
                     wfmId: found[8],
-                    name: found[3]
+                    name: found[3],
+                    email: found[10]
                 };
                 document.getElementById('resName').innerText = log.name;
                 document.getElementById('resVendor').innerText = log.vendor;
                 document.getElementById('resID').innerText = log.wfmId;
+                document.getElementById('resEmail').innerText = log.email;
                 document.getElementById('resStatus').innerText = "SAVING...";
 
                 const params = new URLSearchParams(log);
                 await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: params });
-                
                 document.getElementById('wfmInput').value = "";
                 document.getElementById('resStatus').innerText = "DONE!";
                 await loadSharedDB();
@@ -165,7 +167,7 @@
                 masterData = await res.json();
                 renderLogs();
                 renderMaster();
-            } catch(e) { console.error("Sync error"); }
+            } catch(e) { console.error("Sync Error"); }
         }
 
         function renderLogs() {
@@ -174,7 +176,7 @@
             document.getElementById('logList').innerHTML = filtered.map(l => `
                 <tr>
                     <td>${l.date}</td><td>${l.time}</td><td>${l.wh}</td><td>${l.team}</td><td>${l.vendor}</td><td>${l.wfmId}</td><td>${l.name}</td>
-                    <td style="text-align:center"><button class="btn-del" onclick="alert('Xóa trên Sheet nha mày')"><i class="fas fa-trash-can" style="color:#ff5252"></i></button></td>
+                    <td style="text-align:center"><button class="btn-del"><i class="fas fa-trash-can"></i></button></td>
                     <td style="color:green">OK</td>
                 </tr>`).join('');
         }
