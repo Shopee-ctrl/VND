@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO System - No Changes Applied</title>
+    <title>BPO System - Original UI</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; }
@@ -18,17 +18,11 @@
         label { display: block; font-size: 11px; font-weight: 800; color: #1b2559; margin-bottom: 8px; text-transform: uppercase; }
         input, select { width: 100%; padding: 12px; border: 1px solid #e0e5f2; border-radius: 12px; font-weight: 600; color: #1b2559; box-sizing: border-box; margin-bottom: 10px; }
         .btn-confirm { width: 100%; padding: 15px; border: none; border-radius: 12px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; }
-        .btn-search { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: bold; cursor: pointer; }
         .btn-sync { background: #ff5252; color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; position: absolute; bottom: 20px; right: 25px; }
-        table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
         th { text-align: left; padding: 12px; color: var(--text-gray); font-size: 10px; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid #f8fafc; font-size: 12px; color: #1b2559; font-weight: 600; }
         .info-box { background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #e0e5f2; font-weight: bold; min-height: 22px; color: #1b2559; margin-bottom: 10px; }
-        .multiselect { position: relative; width: 100%; }
-        .selectBox { position: relative; }
-        .overSelect { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
-        #checkboxes { display: none; border: 1px solid #e0e5f2; position: absolute; background-color: white; width: 100%; z-index: 10; border-radius: 12px; padding: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        #checkboxes label { display: block; padding: 8px; text-transform: none; font-size: 13px; cursor: pointer; color: #1b2559; font-weight: 600; }
         .table-wrapper { overflow-x: auto; }
     </style>
 </head>
@@ -78,37 +72,7 @@
     </div>
 
     <div id="request" class="main-content">
-        <div class="card">
-            <div class="card-title">FILTER DATA REQUEST</div>
-            <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr 100px; gap: 15px; align-items: flex-end;">
-                <div><label>Date</label><input type="date" id="reqDate" value="2026-03-26"></div>
-                <div><label>Warehouse</label>
-                    <div class="multiselect">
-                        <div class="selectBox" onclick="showCheckboxes()"><select><option id="whLabel">Tất cả kho</option></select><div class="overSelect"></div></div>
-                        <div id="checkboxes">
-                            <label><input type="checkbox" value="VNDB" onchange="updateLabel()"> VNDB</label>
-                            <label><input type="checkbox" value="VNDL" onchange="updateLabel()"> VNDL</label>
-                        </div>
-                    </div>
-                </div>
-                <div><label>Team</label><select id="reqTeam"><option value="All">All Team</option><option>Inventory</option><option>Inbound</option><option>FD</option><option>OB</option></select></div>
-                <button class="btn-search" onclick="loadRequestData()">SEARCH</button>
-            </div>
-        </div>
-        <div class="card" style="padding:0;">
-            <div class="card-title" style="margin:25px 0 15px 25px;">TOTAL VND REQUEST</div>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th><th>Station</th><th>Vendors</th><th>Team</th><th>Task</th>
-                            <th>Bắt đầu</th><th>Kết thúc</th><th>Loại CTV</th><th>WFM Booking</th>
-                        </tr>
-                    </thead>
-                    <tbody id="reqBody"></tbody>
-                </table>
-            </div>
-        </div>
+        <div class="card"><div class="card-title">TOTAL VND REQUEST</div></div>
     </div>
 
     <div id="database" class="main-content">
@@ -149,32 +113,25 @@
                 document.getElementById('dbBody').innerHTML = rawDataCache.slice(0, 100).map((r, i) => 
                     `<tr><td>${i+1}</td><td>${r[1]||'-'}</td><td>${r[3]||'-'}</td><td>${r[8]||'-'}</td><td>${r[10]||'-'}</td></tr>`
                 ).join('');
-            } catch(e) { console.error("Data load error"); }
-        }
-
-        function formatVal(val, isTime = false) {
-            if(!val) return "-";
-            const d = new Date(val);
-            if(isNaN(d)) return val;
-            if(isTime) return d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit', hour12: false});
-            return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+            } catch(e) { console.error("Data error"); }
         }
 
         function handleConfirm() {
             const idInput = document.getElementById('wfmInput').value.trim().toUpperCase();
             if(!idInput) return;
 
-            // DÒ CHUẨN CỘT I (INDEX 8)
+            // ĐÚNG CỘT I (INDEX 8) THEO SHEET INFORM BPO CỦA MÀY
             const found = rawDataCache.find(r => r[8] && String(r[8]).trim().toUpperCase() === idInput);
 
             if(found) {
-                document.getElementById('resVendor').innerText = found[1] || "N/A"; // Cột B (Index 1)
-                document.getElementById('resName').innerText = found[3] || "N/A";   // Cột D (Index 3)
-                document.getElementById('resID').innerText = found[8];             // Cột I
-                document.getElementById('resUserID').innerText = found[8];
-                document.getElementById('resEmail').innerText = found[10] || "N/A"; // Cột K (Index 10)
+                document.getElementById('resVendor').innerText = found[1] || "N/A";
+                document.getElementById('resName').innerText = found[3] || "N/A";
+                document.getElementById('resID').innerText = found[8];
+                document.getElementById('resUserID').innerText = found[9] || found[8];
+                document.getElementById('resEmail').innerText = found[10] || "N/A";
             } else {
-                alert("Mã WFM [" + idInput + "] không có trong danh sách!"); return;
+                alert("Mã WFM [" + idInput + "] không tồn tại trong database!");
+                return;
             }
 
             const item = { 
@@ -182,7 +139,7 @@
                 time: document.getElementById('time').value, 
                 wh: document.getElementById('wh').value, 
                 team: document.getElementById('team').value, 
-                vendor: found[1], wfmId: found[8], name: found[3], type: "IN", synced: false 
+                vendor: found[1], wfmId: found[8], name: found[3], status: "Chờ Sync", synced: false 
             };
             logs.unshift(item);
             localStorage.setItem('bpo_logs', JSON.stringify(logs));
@@ -199,45 +156,15 @@
 
         async function syncToSheet() {
             const pending = logs.filter(l => !l.synced);
+            if(!pending.length) return alert("Hết data!");
             for(let l of pending) {
                 await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(l) });
                 l.synced = true;
             }
             localStorage.setItem('bpo_logs', JSON.stringify(logs));
-            render(); alert("Đồng bộ thành công!");
+            render(); alert("Sync xong rồi đó!");
         }
 
-        function loadRequestData() {
-            const tbody = document.getElementById('reqBody');
-            const dateInput = document.getElementById('reqDate').value;
-            const whs = Array.from(document.querySelectorAll('#checkboxes input:checked')).map(i => i.value);
-            const teamF = document.getElementById('reqTeam').value;
-
-            if(!dateInput) return;
-            const dInput = new Date(dateInput);
-            const targetStr = String(dInput.getDate()).padStart(2,'0') + '/' + String(dInput.getMonth()+1).padStart(2,'0') + '/' + dInput.getFullYear();
-
-            const filtered = rawDataCache.filter(r => {
-                if(!r[0]) return false;
-                const sDate = new Date(r[0]);
-                const sheetStr = String(sDate.getDate()).padStart(2,'0') + '/' + String(sDate.getMonth()+1).padStart(2,'0') + '/' + sDate.getFullYear();
-                return sheetStr === targetStr && (whs.length === 0 || whs.includes(r[1])) && (teamF === 'All' || r[3] === teamF);
-            });
-
-            tbody.innerHTML = filtered.map(r => `
-                <tr>
-                    <td>${formatVal(r[0])}</td><td>${r[1] || ''}</td><td>${r[2] || ''}</td><td>${r[3] || ''}</td>
-                    <td>${r[4] || ''}</td><td>${formatVal(r[5], true)}</td><td>${formatVal(r[6], true)}</td>
-                    <td>${r[8] || ''}</td><td>${r[9] || ''}</td>
-                </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;">No data</td></tr>';
-        }
-
-        let expanded = false;
-        function showCheckboxes() { const cb = document.getElementById("checkboxes"); cb.style.display = expanded ? "none" : "block"; expanded = !expanded; }
-        function updateLabel() {
-            const checked = Array.from(document.querySelectorAll('#checkboxes input:checked')).map(i => i.value);
-            document.getElementById("whLabel").innerText = checked.length ? checked.join(', ') : "Tất cả kho";
-        }
         function switchTab(t, el) {
             document.querySelectorAll('.main-content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
