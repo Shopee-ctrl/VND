@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO System - Centralized Database</title>
+    <title>BPO System - Final Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; }
@@ -98,13 +98,13 @@
         <div class="card">
             <div class="card-title">BPO MASTER DATABASE</div>
             <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; align-items: flex-end;">
-                <div><label>Lọc Theo Ngày Đã Nhập</label><input type="date" id="dbFilterDate" onchange="loadMasterDatabase()"></div>
-                <div><label>Công Cụ</label><button class="btn-export" style="width:100%" onclick="downloadMasterDB()">TẢI XUỐNG (CSV)</button></div>
-                <button class="btn-search" onclick="loadMasterDatabase()">LÀM MỚI DỮ LIỆU</button>
+                <div><label>Chọn Ngày Xem Data</label><input type="date" id="dbDate" onchange="filterMasterDB()"></div>
+                <button class="btn-export" onclick="exportMasterCSV()">TẢI XUỐNG CSV</button>
+                <button class="btn-search" style="background:#10b981" onclick="fetchFullData()">LÀM MỚI (REFRESH)</button>
             </div>
         </div>
         <div class="card" style="padding:0;">
-            <div class="card-title" style="margin:25px 0 15px 25px;">DỮ LIỆU ĐÃ ĐỒNG BỘ TỪ CÁC MÁY</div>
+            <div class="card-title" style="margin:25px 0 15px 25px;">DỮ LIỆU TỔNG HỢP CÁC MÁY</div>
             <div class="table-wrapper">
                 <table id="masterTable">
                     <thead><tr><th>DATE</th><th>TIME</th><th>WH</th><th>TEAM</th><th>VENDOR</th><th>WFM ID</th><th>FULL NAME</th></tr></thead>
@@ -119,13 +119,13 @@
         const CSV_PT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=0&single=true&output=csv';
         const CSV_COMMIT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=915514461&single=true&output=csv';
 
-        let dataPT = [], dataCommit = [], logs = JSON.parse(localStorage.getItem('bpo_logs')) || [];
+        let dataPT = [], dataCommit = [], masterDataFromSheet = [], logs = JSON.parse(localStorage.getItem('bpo_logs')) || [];
 
         window.onload = () => { 
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('inputDate').value = today;
-            document.getElementById('dbFilterDate').value = today;
-            fillTime(); render(); preloadData(); loadMasterDatabase();
+            document.getElementById('dbDate').value = today;
+            fillTime(); render(); preloadData(); fetchFullData();
         };
 
         function fillTime() {
@@ -143,7 +143,7 @@
             dataCommit = tCommit.split('\n').map(r => r.split(',').map(c => c.replace(/^"|"$/g, '').trim()));
         }
 
-        // --- TASK 1 & 2: KHÔNG ĐỔI ---
+        // --- TASK 1 ---
         function handleConfirm() {
             const idInput = document.getElementById('wfmInput').value.trim().toUpperCase();
             const found = dataPT.find(r => r[8] && r[8].toUpperCase() === idInput);
@@ -174,10 +174,10 @@
                 l.synced = true;
             }
             localStorage.setItem('bpo_logs', JSON.stringify(logs));
-            render(); 
-            loadMasterDatabase(); // Cập nhật luôn Task 3 sau khi sync
+            render(); fetchFullData();
         }
 
+        // --- TASK 2 (GIỮ NGUYÊN) ---
         function loadRequestData() {
             const dVal = document.getElementById('reqDate').value;
             if(!dVal) return;
@@ -188,32 +188,32 @@
                 <tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[8]}</td><td>${r[9]}</td></tr>`).join('');
         }
 
-        // --- TASK 3: LOGIC ĐỒNG BỘ TẬP TRUNG ---
-        async function loadMasterDatabase() {
-            const fDate = document.getElementById('dbFilterDate').value;
+        // --- TASK 3 (LOGIC MỚI - TẢI DATA) ---
+        async function fetchFullData() {
             try {
-                // Gọi API lấy toàn bộ dữ liệu từ Sheet (cần hàm doGet trong Google Script)
-                const res = await fetch(SCRIPT_URL + "?action=read");
-                const fullData = await res.json();
-                const filtered = fullData.filter(r => r.date === fDate);
-                document.getElementById('masterBody').innerHTML = filtered.map(r => `
-                    <tr><td>${r.date}</td><td>${r.time}</td><td>${r.wh}</td><td>${r.team}</td><td>${r.vendor}</td><td>${r.wfmId}</td><td>${r.name}</td></tr>`).join('');
-                window.cachedMaster = filtered;
-            } catch (e) { 
-                document.getElementById('masterBody').innerHTML = '<tr><td colspan="7" style="text-align:center">Đang tải hoặc chưa có dữ liệu đồng bộ...</td></tr>';
-            }
+                // Thêm tham số ?action=read để Script Google biết là đang muốn lấy data về
+                const response = await fetch(SCRIPT_URL + "?action=read");
+                masterDataFromSheet = await response.json();
+                filterMasterDB();
+            } catch (e) { console.log("Database fetch failed"); }
         }
 
-        function downloadMasterDB() {
-            if(!window.cachedMaster || window.cachedMaster.length === 0) return alert("Không có dữ liệu để tải!");
-            let csv = "\ufeffDATE,TIME,WH,TEAM,VENDOR,WFM ID,FULL NAME\n";
-            window.cachedMaster.forEach(r => {
-                csv += `${r.date},${r.time},${r.wh},${r.team},${r.vendor},${r.wfmId},${r.name}\n`;
-            });
+        function filterMasterDB() {
+            const fDate = document.getElementById('dbDate').value;
+            const filtered = masterDataFromSheet.filter(r => r.date === fDate);
+            document.getElementById('masterBody').innerHTML = filtered.map(r => `
+                <tr><td>${r.date}</td><td>${r.time}</td><td>${r.wh}</td><td>${r.team}</td><td>${r.vendor}</td><td>${r.wfmId}</td><td>${r.name}</td></tr>`).join('');
+        }
+
+        function exportMasterCSV() {
+            const fDate = document.getElementById('dbDate').value;
+            const data = masterDataFromSheet.filter(r => r.date === fDate);
+            let csv = "\ufeffDATE,TIME,WH,TEAM,VENDOR,WFM ID,NAME\n";
+            data.forEach(r => csv += `${r.date},${r.time},${r.wh},${r.team},${r.vendor},${r.wfmId},${r.name}\n`);
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `BPO_Master_Database_${document.getElementById('dbFilterDate').value}.csv`;
+            link.download = `BPO_DB_${fDate}.csv`;
             link.click();
         }
 
@@ -222,7 +222,7 @@
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById(t).classList.add('active');
             el.classList.add('active');
-            if(t === 'database') loadMasterDatabase();
+            if(t === 'database') fetchFullData();
         }
     </script>
 </body>
