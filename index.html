@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO System - No Data Loss</title>
+    <title>BPO System - Final Version</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; }
@@ -20,15 +20,16 @@
         .btn-confirm { width: 100%; padding: 15px; border: none; border-radius: 12px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; }
         .btn-search { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 12px; font-weight: bold; cursor: pointer; }
         .btn-sync { background: #ff5252; color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; position: absolute; bottom: 20px; right: 25px; }
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 15px; color: var(--text-gray); font-size: 11px; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
-        td { padding: 15px; border-bottom: 1px solid #f8fafc; font-size: 13px; color: #1b2559; font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+        th { text-align: left; padding: 12px; color: var(--text-gray); font-size: 10px; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid #f8fafc; font-size: 12px; color: #1b2559; font-weight: 600; }
         .info-box { background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #e0e5f2; font-weight: bold; min-height: 22px; color: #1b2559; margin-bottom: 10px; }
         .multiselect { position: relative; width: 100%; }
         .selectBox { position: relative; }
         .overSelect { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
         #checkboxes { display: none; border: 1px solid #e0e5f2; position: absolute; background-color: white; width: 100%; z-index: 10; border-radius: 12px; padding: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         #checkboxes label { display: block; padding: 8px; text-transform: none; font-size: 13px; cursor: pointer; color: #1b2559; font-weight: 600; }
+        .table-wrapper { overflow-x: auto; }
     </style>
 </head>
 <body>
@@ -65,10 +66,12 @@
         </div>
         <div class="card" style="padding:0; min-height:350px;">
             <div class="card-title" style="margin:25px 0 15px 25px;">DATA ENTRY LOGS</div>
-            <table>
-                <thead><tr><th>Time</th><th>WH</th><th>Team</th><th>Vendor</th><th>WFM ID</th><th>Full Name</th><th>Status</th><th>Action</th></tr></thead>
-                <tbody id="logList"></tbody>
-            </table>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Time</th><th>WH</th><th>Team</th><th>Vendor</th><th>WFM ID</th><th>Full Name</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody id="logList"></tbody>
+                </table>
+            </div>
             <button class="btn-sync" onclick="syncToSheet()">SYNC TO SHEET</button>
         </div>
     </div>
@@ -78,12 +81,13 @@
             <div class="card-title">FILTER DATA REQUEST</div>
             <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr 100px; gap: 15px; align-items: flex-end;">
                 <div><label>Date</label><input type="date" id="reqDate" value="2026-03-25"></div>
-                <div><label>Warehouse (Mặc định lấy hết)</label>
+                <div><label>Warehouse</label>
                     <div class="multiselect">
                         <div class="selectBox" onclick="showCheckboxes()"><select><option id="whLabel">Tất cả kho</option></select><div class="overSelect"></div></div>
                         <div id="checkboxes">
                             <label><input type="checkbox" value="VNDB" onchange="updateLabel()"> VNDB</label>
                             <label><input type="checkbox" value="VNDL" onchange="updateLabel()"> VNDL</label>
+                            <label><input type="checkbox" value="VNN" onchange="updateLabel()"> VNN</label>
                         </div>
                     </div>
                 </div>
@@ -93,17 +97,22 @@
         </div>
         <div class="card" style="padding:0;">
             <div class="card-title" style="margin:25px 0 15px 25px;">TOTAL VND REQUEST</div>
-            <table>
-                <thead><tr><th>Date</th><th>WH</th><th>Vendor</th><th>Team</th><th>Task</th><th>Total Booking</th></tr></thead>
-                <tbody id="reqBody"></tbody>
-            </table>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th><th>Station</th><th>Vendors</th><th>Team</th><th>Task</th>
+                            <th>Bắt đầu</th><th>Kết thúc</th><th>Loại CTV</th><th>WFM Booking</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reqBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwp1UEjOuWEaiCrx_BwjGnJRE9cOZLHHD1nBl6ANg4el5cuOHWH-XH-p5uHoBhQ9m4/exec';
-        
-        // F5 KHÔNG MẤT DỮ LIỆU NHỜ LOCALSTORAGE
         let logs = JSON.parse(localStorage.getItem('bpo_logs')) || [];
         let rawDataCache = [];
 
@@ -117,11 +126,16 @@
             }
         }
 
-        function formatDateDisplay(str) {
-            if(!str) return "-";
-            const d = new Date(str);
-            if(isNaN(d)) return str;
-            return d.toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric'});
+        function formatVal(val, isTime = false) {
+            if(!val) return "-";
+            if(typeof val === 'string' && val.includes('T')) {
+                const d = new Date(val);
+                if(!isNaN(d)) {
+                    if(isTime) return d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit', hour12: false});
+                    return d.toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric'});
+                }
+            }
+            return val;
         }
 
         function handleConfirm() {
@@ -130,7 +144,7 @@
             const item = { time: document.getElementById('time').value, wh: document.getElementById('wh').value, team: document.getElementById('team').value, vendor: "Agari", wfmId: id, name: "TRẦN BÙI ANH BẢO", type: "IN", synced: false };
             logs.unshift(item);
             localStorage.setItem('bpo_logs', JSON.stringify(logs));
-            document.getElementById('resUserID').innerText = id; //
+            document.getElementById('resUserID').innerText = id;
             render();
             document.getElementById('wfmInput').value = "";
         }
@@ -152,7 +166,7 @@
                 }
                 localStorage.setItem('bpo_logs', JSON.stringify(logs));
                 render();
-                alert("Đã đồng bộ lên DATA PT!"); //
+                alert("Đã đồng bộ lên DATA PT!"); 
             } catch(e) { alert("Lỗi kết nối!"); }
         }
 
@@ -172,21 +186,24 @@
             const filtered = rawDataCache.filter(r => {
                 const rDate = r[0].split('T')[0];
                 const matchDate = !dateF || rDate === dateF;
-                // Nếu không chọn kho thì lấy cả VNDB/VNDL
                 const matchWh = whs.length === 0 ? (r[1] === 'VNDB' || r[1] === 'VNDL') : whs.includes(r[1]);
                 const matchTeam = teamF === 'All' || r[3] === teamF;
                 return matchDate && matchWh && matchTeam;
             });
 
+            // Lấy 9 cột (Bỏ cột index 7 - cột H trống)
             tbody.innerHTML = filtered.map(r => `
                 <tr>
-                    <td>${formatDateDisplay(r[0])}</td>
-                    <td>${r[1]}</td>
-                    <td>${r[2]}</td>
-                    <td>${r[3]}</td>
-                    <td>${r[4]}</td>
-                    <td>${r[5]}</td>
-                </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;">Không có data phù hợp</td></tr>';
+                    <td>${formatVal(r[0])}</td>
+                    <td>${r[1] || ''}</td>
+                    <td>${r[2] || ''}</td>
+                    <td>${r[3] || ''}</td>
+                    <td>${r[4] || ''}</td>
+                    <td>${formatVal(r[5], true)}</td>
+                    <td>${formatVal(r[6], true)}</td>
+                    <td>${r[8] || ''}</td>
+                    <td>${r[9] || ''}</td>
+                </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;">Không có data</td></tr>';
         }
 
         let expanded = false;
