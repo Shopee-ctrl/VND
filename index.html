@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO SYSTEM</title>
+    <title>BPO SYSTEM - FIXED</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; --danger: #ff5252; --success: #2ecc71; }
@@ -24,11 +24,8 @@
         table { width: 100%; border-collapse: collapse; min-width: 1000px; }
         th { text-align: left; padding: 12px; color: var(--text-gray); font-size: 10px; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid #f8fafc; font-size: 12px; color: #1b2559; font-weight: 600; }
-        
-        /* Checkbox Group cho Task 2 */
         .check-group { display: flex; gap: 15px; background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #e0e5f2; flex-wrap: wrap; margin-bottom: 10px; }
         .check-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #1b2559; cursor: pointer; }
-        .check-item input { width: 16px; height: 16px; cursor: pointer; margin: 0; }
     </style>
 </head>
 <body>
@@ -46,7 +43,7 @@
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                         <div style="grid-column: span 2;"><label>DATE SYNC</label><input type="date" id="inputDate" onchange="loadSharedDB()"></div>
                         <div><label>WH</label><select id="wh"><option>VNDB</option><option>VNDL</option></select></div>
-                        <div><label>TEAM</label><select id="team"><option>Inbound</option><option>Inventory</option><option>FD</option><option>OB</option></select></div>
+                        <div><label>TEAM</label><select id="team"><option>Inbound</option><option>Inventory</option><option>FD</option><option>Outbound</option><option>HSE</option></select></div>
                         <div><label>TIME</label><select id="time"></select></div>
                         <div><label>SHIFT</label><select id="shift"><option>Day</option><option>Night</option></select></div>
                     </div>
@@ -59,9 +56,8 @@
                         <div><label>VENDOR</label><div class="info-box" id="resVendor">-</div></div>
                         <div><label>NAME</label><div class="info-box" id="resName">-</div></div>
                         <div><label>ID</label><div class="info-box" id="resID">-</div></div>
-                        <div><label>USER WFM ID</label><div class="info-box" id="resUserId">-</div></div>
+                        <div><label>EMAIL</label><div class="info-box" id="resEmail" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</div></div>
                     </div>
-                    <label>EMAIL</label><div class="info-box" id="resEmail">-</div>
                     <label>STATUS</label><div class="info-box" id="resStatus" style="color: var(--primary);">READY</div>
                 </div>
             </div>
@@ -79,19 +75,20 @@
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     <div><label>Date</label><input type="date" id="reqDate" style="width: 200px;"></div>
                     <div>
-                        <label>Warehouse (Tick chọn nhiều)</label>
+                        <label>Warehouse (Bỏ trống = Lấy hết)</label>
                         <div class="check-group" id="reqWhGroup">
-                            <label class="check-item"><input type="checkbox" value="VNDB" checked> VNDB</label>
-                            <label class="check-item"><input type="checkbox" value="VNDL" checked> VNDL</label>
+                            <label class="check-item"><input type="checkbox" value="VNDB"> VNDB</label>
+                            <label class="check-item"><input type="checkbox" value="VNDL"> VNDL</label>
                         </div>
                     </div>
                     <div>
-                        <label>Team (Tick chọn nhiều)</label>
+                        <label>Team (Bỏ trống = Lấy hết)</label>
                         <div class="check-group" id="reqTeamGroup">
-                            <label class="check-item"><input type="checkbox" value="Inbound" checked> Inbound</label>
-                            <label class="check-item"><input type="checkbox" value="Inventory" checked> Inventory</label>
-                            <label class="check-item"><input type="checkbox" value="FD" checked> FD</label>
-                            <label class="check-item"><input type="checkbox" value="OB" checked> OB</label>
+                            <label class="check-item"><input type="checkbox" value="Inbound"> Inbound</label>
+                            <label class="check-item"><input type="checkbox" value="Inventory"> Inventory</label>
+                            <label class="check-item"><input type="checkbox" value="FD"> FD</label>
+                            <label class="check-item"><input type="checkbox" value="Outbound"> Outbound</label>
+                            <label class="check-item"><input type="checkbox" value="HSE"> HSE</label>
                         </div>
                     </div>
                     <button class="btn-search" onclick="loadRequestData()" style="width: 150px;">SEARCH</button>
@@ -108,10 +105,9 @@
         <div id="database" class="main-content">
             <div class="card">
                 <div class="card-title">BPO MASTER DATABASE</div>
-                <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 15px; align-items: flex-end;">
+                <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 15px; align-items: flex-end;">
                     <div><label>Filter Date</label><input type="date" id="dbDate" onchange="renderMaster()"></div>
                     <button class="btn-search" onclick="loadSharedDB()">REFRESH</button>
-                    <button class="btn-download" onclick="window.location.reload()" style="background:#e0e5f2; color:#1b2559; border:none; padding:12px; border-radius:12px; cursor:pointer; font-weight:bold;">RELOAD APP</button>
                 </div>
             </div>
             <div class="card" style="padding:0; overflow-x:auto;">
@@ -153,9 +149,10 @@
             dataCommit = t2.split('\n').map(r => r.split(',').map(c => c.replace(/^"|"$/g, '').trim()));
         }
 
+        // HÀM FIX LỖI SAT D: Ép kiểu chuỗi nghiêm ngặt
         function formatTime(t) {
             if (!t) return "00:00";
-            let s = t.toString();
+            let s = String(t);
             let match = s.match(/\d{2}:\d{2}/);
             return match ? match[0] : s.substring(0, 5);
         }
@@ -174,7 +171,6 @@
                 document.getElementById('resName').innerText = found[3];
                 document.getElementById('resVendor').innerText = found[1];
                 document.getElementById('resID').innerText = found[8];
-                document.getElementById('resUserId').innerText = found[9];
                 document.getElementById('resEmail').innerText = found[10];
                 document.getElementById('resStatus').innerText = "VUI LÒNG BẤM CONFIRM!";
             } else { alert("Mã không tồn tại!"); }
@@ -210,11 +206,27 @@
 
         function loadRequestData() {
             const dVal = document.getElementById('reqDate').value;
-            const selWh = Array.from(document.querySelectorAll('#reqWhGroup input:checked')).map(i => i.value);
-            const selTeam = Array.from(document.querySelectorAll('#reqTeamGroup input:checked')).map(i => i.value);
             const [y, m, d] = dVal.split('-');
             const dateStr = `${parseInt(d)}/${parseInt(m)}/${y}`;
-            const filtered = dataCommit.filter(r => (r[0] === dateStr || r[0] === `${d}/${m}/${y}`) && selWh.includes(r[1]) && selTeam.includes(r[3]));
+            
+            // Lấy danh sách đã tick
+            let selWh = Array.from(document.querySelectorAll('#reqWhGroup input:checked')).map(i => i.value);
+            let selTeam = Array.from(document.querySelectorAll('#reqTeamGroup input:checked')).map(i => i.value);
+            
+            // Logic Auto Select All nếu bỏ trống
+            const allWh = ["VNDB", "VNDL"];
+            const allTeam = ["Inbound", "Inventory", "FD", "Outbound", "HSE"];
+            
+            const filterWh = selWh.length > 0 ? selWh : allWh;
+            const filterTeam = selTeam.length > 0 ? selTeam : allTeam;
+
+            const filtered = dataCommit.filter(r => {
+                const checkDate = (r[0] === dateStr || r[0] === `${d}/${m}/${y}`);
+                const checkWh = filterWh.includes(r[1]);
+                const checkTeam = filterTeam.includes(r[3]);
+                return checkDate && checkWh && checkTeam;
+            });
+            
             document.getElementById('reqBody').innerHTML = filtered.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[8]}</td><td>${r[9]}</td></tr>`).join('');
         }
 
