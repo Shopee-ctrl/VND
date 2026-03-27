@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO SYSTEM - FINAL REPAIR</title>
+    <title>BPO SYSTEM - DATA FIXED</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --border: #e0e5f2; }
@@ -116,64 +116,89 @@
             document.getElementById('inputDate').value = today;
             document.getElementById('reqDate').value = today;
             document.getElementById('dbDate').value = today;
-            preloadData(); loadSharedDB();
+            fillTimeDropdown(); preloadData(); loadSharedDB();
         };
+
+        function fillTimeDropdown() {
+            const sel = document.getElementById('time');
+            for(let i=0; i<48; i++) {
+                let h = Math.floor(i/2).toString().padStart(2,'0'), m = i%2==0?'00':'30';
+                sel.add(new Option(`${h}:${m}`, `${h}:${m}`));
+            }
+        }
+
+        // Hàm xử lý CSV cực mạnh để không bị lỗi dấu phẩy
+        function parseCSV(str) {
+            const arr = [];
+            let quote = false;
+            for (let row = 0, col = 0, c = 0; c < str.length; c++) {
+                let cc = str[c], nc = str[c+1];
+                arr[row] = arr[row] || [];
+                arr[row][col] = arr[row][col] || '';
+                if (cc == '"' && quote && nc == '"') { arr[row][col] += cc; ++c; continue; }
+                if (cc == '"') { quote = !quote; continue; }
+                if (cc == ',' && !quote) { ++col; continue; }
+                if (cc == '\r' && nc == '\n' && !quote) { ++row; col = 0; ++c; continue; }
+                if (cc == '\n' && !quote) { ++row; col = 0; continue; }
+                if (cc == '\r' && !quote) { ++row; col = 0; continue; }
+                arr[row][col] += cc;
+            }
+            return arr.map(r => r.map(cell => cell.trim()));
+        }
 
         async function preloadData() {
             try {
                 const [r1, r2] = await Promise.all([fetch(CSV_PT_URL), fetch(CSV_COMMIT_URL)]);
-                const t1 = await r1.text(), t2 = await r2.text();
-                
-                const parseCSV = (str) => str.split('\n').map(row => row.split(',').map(c => c.replace(/^"|"$/g, '').trim()));
-                dataPT = parseCSV(t1);
-                dataCommit = parseCSV(t2);
-
-                // Lấy giờ từ cột F (index 5) của dataCommit để đưa vào Dropdown Task 1 cho chuẩn
-                const timeSelect = document.getElementById('time');
-                const uniqueTimes = [...new Set(dataCommit.slice(1).map(r => r[5]))].filter(t => t && t.includes(':')).sort();
-                timeSelect.innerHTML = uniqueTimes.map(t => `<option value="${t}">${t}</option>`).join('');
-
-            } catch (e) { console.error("Lỗi tải data"); }
+                dataPT = parseCSV(await r1.text());
+                dataCommit = parseCSV(await r2.text());
+                console.log("Data loaded:", dataPT.length, dataCommit.length);
+            } catch (e) { alert("Lỗi tải file CSV từ Google Sheet!"); }
         }
 
         function checkInfo() {
             const id = document.getElementById('wfmInput').value.trim().toUpperCase();
-            const found = dataPT.find(r => r[8] && r[8].toUpperCase() === id);
+            if(!id) return;
+            // Tìm mã WFM ở bất kỳ cột nào (thường là cột 8 hoặc 9)
+            const found = dataPT.find(r => r.some(cell => cell.toUpperCase() === id));
             if(found) {
-                document.getElementById('resName').innerText = found[3] || found[2];
-                document.getElementById('resVendor').innerText = found[1];
+                document.getElementById('resName').innerText = found[3] || found[2] || "N/A";
+                document.getElementById('resVendor').innerText = found[1] || "N/A";
                 document.getElementById('resID').innerText = id;
-                document.getElementById('resUserId').innerText = found[9] || found[10] || "-";
-                document.getElementById('resStatus').innerText = "MÃ OK!";
-            } else { alert("Không thấy mã này!"); }
+                document.getElementById('resUserId').innerText = found[9] || found[10] || found[11] || "-";
+                document.getElementById('resStatus').innerText = "MÃ HỢP LỆ!";
+            } else { alert("Không tìm thấy mã WFM: " + id); }
         }
 
         async function handleConfirm() {
+            const id = document.getElementById('resID').innerText;
+            if(id === "-") return alert("Hãy nhập mã WFM trước!");
             const data = {
                 date: document.getElementById('inputDate').value,
                 time: document.getElementById('time').value,
                 wh: document.getElementById('wh').value,
                 team: document.getElementById('team').value,
                 vendor: document.getElementById('resVendor').innerText,
-                wfmId: document.getElementById('resID').innerText,
+                wfmId: id,
                 userId: document.getElementById('resUserId').innerText,
                 name: document.getElementById('resName').innerText
             };
-            if(data.wfmId === "-") return;
             document.getElementById('resStatus').innerText = "SAVING...";
             await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(data) });
             document.getElementById('resStatus').innerText = "DONE!";
+            document.getElementById('wfmInput').value = "";
             loadSharedDB();
         }
 
         async function loadSharedDB() {
-            const res = await fetch(SCRIPT_URL);
-            masterData = await res.json();
-            const target = document.getElementById('dbDate').value;
-            const filtered = masterData.filter(r => r.date === target);
-            const html = filtered.map(r => `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.wh}</td><td>${r.team}</td><td>${r.vendor}</td><td>${r.wfmId}</td><td>${r.userId}</td><td>${r.name}</td></tr>`).join('');
-            document.getElementById('logList').innerHTML = html;
-            document.getElementById('masterBody').innerHTML = html;
+            try {
+                const res = await fetch(SCRIPT_URL);
+                masterData = await res.json();
+                const target = document.getElementById('dbDate').value;
+                const filtered = masterData.filter(r => r.date === target);
+                const html = filtered.map(r => `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.wh}</td><td>${r.team}</td><td>${r.vendor}</td><td>${r.wfmId}</td><td>${r.userId}</td><td>${r.name}</td></tr>`).join('');
+                document.getElementById('logList').innerHTML = html;
+                document.getElementById('masterBody').innerHTML = html;
+            } catch (e) { console.log("DB rỗng hoặc lỗi kết nối"); }
         }
 
         function loadRequestData() {
@@ -184,17 +209,17 @@
             const fTeam = document.getElementById('reqTeam').value;
 
             const filtered = dataCommit.filter(r => {
-                const cDate = (r[0] === dateStr || r[0].includes(`${d}/${m}`));
+                const cDate = (r[0] == dateStr || (r[0] && r[0].includes(`${parseInt(d)}/${parseInt(m)}`)));
                 const cWh = fWh === "" || r[1] === fWh;
                 const cTeam = fTeam === "" || r[3] === fTeam;
                 return cDate && cWh && cTeam;
             });
 
-            // Hiện đúng 10 cột, bỏ cột Index 7 (cột H)
+            // Hiển thị 10 cột, bỏ cột H (Index 7)
             document.getElementById('reqBody').innerHTML = filtered.map(r => `
                 <tr>
-                    <td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td>
-                    <td>${r[5]}</td><td>${r[6]}</td><td>${r[8]}</td><td>${r[9]}</td><td>${r[10]}</td>
+                    <td>${r[0]||""}</td><td>${r[1]||""}</td><td>${r[2]||""}</td><td>${r[3]||""}</td><td>${r[4]||""}</td>
+                    <td>${r[5]||""}</td><td>${r[6]||""}</td><td>${r[8]||""}</td><td>${r[9]||""}</td><td>${r[10]||""}</td>
                 </tr>
             `).join('');
         }
