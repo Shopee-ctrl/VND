@@ -2,10 +2,10 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO SYSTEM - DATA FIXED</title>
+    <title>BPO SYSTEM - PRECISE VERSION</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --border: #e0e5f2; }
+        :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --text-gray: #a3abc1; --danger: #ff5252; --success: #2ecc71; --border: #e0e5f2; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
         .sidebar { width: 260px; background: var(--sidebar); color: white; padding-top: 20px; flex-shrink: 0; }
         .nav-item { padding: 15px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); margin: 5px 15px; border-radius: 12px; cursor: pointer; transition: 0.3s; font-size: 14px; }
@@ -18,10 +18,17 @@
         .card-title { font-weight: bold; color: #1b2559; border-left: 4px solid var(--primary); padding-left: 15px; margin-bottom: 20px; text-transform: uppercase; font-size: 13px; }
         label { display: block; font-size: 11px; font-weight: 800; color: #1b2559; margin-bottom: 8px; text-transform: uppercase; }
         input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 12px; font-weight: 600; color: #1b2559; box-sizing: border-box; }
-        .btn-confirm { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; }
+        .btn-confirm, .btn-search { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .info-box { background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid var(--border); font-weight: bold; min-height: 20px; color: #1b2559; margin-bottom: 10px; font-size: 13px; }
-        table { width: 100%; border-collapse: collapse; min-width: 1200px; }
-        th { text-align: left; padding: 12px; color: #a3abc1; font-size: 10px; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
+        
+        .drop-multi { position: relative; width: 100%; }
+        .drop-label { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 13px; }
+        .drop-list { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid var(--border); border-radius: 12px; margin-top: 5px; z-index: 100; display: none; max-height: 200px; overflow-y: auto; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .drop-item { padding: 10px 15px; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .drop-item:hover { background: #f4f7fe; }
+
+        table { width: 100%; border-collapse: collapse; min-width: 1300px; }
+        th { text-align: left; padding: 12px; color: var(--text-gray); font-size: 10px; border-bottom: 1px solid #f1f5f9; text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid #f8fafc; font-size: 12px; color: #1b2559; font-weight: 600; }
     </style>
 </head>
@@ -38,15 +45,14 @@
                 <div class="card">
                     <div class="card-title">INPUT WFM ID</div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-                        <div style="grid-column: span 2;"><label>DATE SYNC</label><input type="date" id="inputDate"></div>
+                        <div style="grid-column: span 2;"><label>DATE SYNC</label><input type="date" id="inputDate" onchange="loadSharedDB()"></div>
                         <div><label>WH</label><select id="wh"><option>VNDB</option><option>VNDL</option></select></div>
                         <div><label>TEAM</label><select id="team"><option>Inbound</option><option>Inventory</option><option>FD</option><option>Outbound</option><option>HSE</option></select></div>
                         <div><label>TIME</label><select id="time"></select></div>
                         <div><label>SHIFT</label><select id="shift"><option>Day</option><option>Night</option></select></div>
                     </div>
-                    <label style="margin-top:10px;">WFM ID</label>
-                    <input type="text" id="wfmInput" placeholder="Nhập mã rồi Enter..." onkeypress="if(event.key==='Enter') checkInfo()">
-                    <button class="btn-confirm" onclick="handleConfirm()">CONFIRM</button>
+                    <input type="text" id="wfmInput" placeholder="Mã WFM + Enter..." onkeypress="if(event.key==='Enter') checkInfo()" style="margin-top:10px;">
+                    <button class="btn-confirm" onclick="handleConfirm()" style="width:100%; margin-top:10px;">CONFIRM</button>
                 </div>
                 <div class="card">
                     <div class="card-title">INFO DETAILS</div>
@@ -56,12 +62,13 @@
                         <div><label>WFM ID</label><div class="info-box" id="resID">-</div></div>
                         <div><label>USER WFM ID</label><div class="info-box" id="resUserId">-</div></div>
                     </div>
+                    <label>EMAIL</label><div class="info-box" id="resEmail">-</div>
                     <label>STATUS</label><div class="info-box" id="resStatus" style="color: var(--primary);">READY</div>
                 </div>
             </div>
             <div class="card" style="padding:0; overflow-x:auto;">
                 <table>
-                    <thead><tr><th>DATE</th><th>TIME</th><th>WH</th><th>TEAM</th><th>VENDOR</th><th>WFM ID</th><th>USER ID</th><th>NAME</th></tr></thead>
+                    <thead><tr><th>DATE</th><th>TIME</th><th>WH</th><th>TEAM</th><th>VENDOR</th><th>WFM ID</th><th>USER ID</th><th>NAME</th><th>STATUS</th></tr></thead>
                     <tbody id="logList"></tbody>
                 </table>
             </div>
@@ -70,17 +77,39 @@
         <div id="request" class="main-content">
             <div class="card">
                 <div class="card-title">FILTER DATA REQUEST</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 15px;">
                     <div><label>Date</label><input type="date" id="reqDate"></div>
-                    <div><label>Warehouse</label><select id="reqWh"><option value="">Tất cả</option><option>VNDB</option><option>VNDL</option></select></div>
-                    <div><label>Team</label><select id="reqTeam"><option value="">Tất cả</option><option>Inbound</option><option>Inventory</option><option>FD</option><option>Outbound</option><option>HSE</option></select></div>
+                    <div><label>Warehouse</label>
+                        <div class="drop-multi">
+                            <div class="drop-label" onclick="toggleD('dWh')">Chọn WH <i class="fas fa-chevron-down"></i></div>
+                            <div class="drop-list" id="dWh">
+                                <label class="drop-item"><input type="checkbox" value="VNDB"> VNDB</label>
+                                <label class="drop-item"><input type="checkbox" value="VNDL"> VNDL</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div><label>Team</label>
+                        <div class="drop-multi">
+                            <div class="drop-label" onclick="toggleD('dTeam')">Chọn Team <i class="fas fa-chevron-down"></i></div>
+                            <div class="drop-list" id="dTeam">
+                                <label class="drop-item"><input type="checkbox" value="Inbound"> Inbound</label>
+                                <label class="drop-item"><input type="checkbox" value="Inventory"> Inventory</label>
+                                <label class="drop-item"><input type="checkbox" value="FD"> FD</label>
+                                <label class="drop-item"><input type="checkbox" value="Outbound"> Outbound</label>
+                                <label class="drop-item"><input type="checkbox" value="HSE"> HSE</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button class="btn-confirm" onclick="loadRequestData()" style="margin-top:15px;">SEARCH DATA</button>
+                <button class="btn-search" onclick="loadRequestData()" style="margin-top:15px;">SEARCH</button>
             </div>
             <div class="card" style="padding:0; overflow-x:auto;">
                 <table>
                     <thead>
-                        <tr><th>DATE</th><th>STATION</th><th>VENDORS</th><th>TEAM</th><th>TASK</th><th>BẮT ĐẦU</th><th>KẾT THÚC</th><th>LOẠI CTV</th><th>WFM BOOKING</th><th>ID USER</th></tr>
+                        <tr>
+                            <th>DATE</th><th>STATION</th><th>VENDORS</th><th>TEAM</th><th>TASK</th>
+                            <th>BẮT ĐẦU</th><th>KẾT THÚC</th><th>LOẠI CTV</th><th>WFM BOOKING</th><th>ID USER</th>
+                        </tr>
                     </thead>
                     <tbody id="reqBody"></tbody>
                 </table>
@@ -90,9 +119,10 @@
         <div id="database" class="main-content">
             <div class="card">
                 <div class="card-title">MASTER DATABASE</div>
-                <div style="display: flex; gap:15px; align-items: flex-end;">
-                    <div style="flex:1;"><label>Date</label><input type="date" id="dbDate" onchange="loadSharedDB()"></div>
-                    <button class="btn-confirm" onclick="loadSharedDB()" style="width:150px;">REFRESH</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: flex-end;">
+                    <div><label>Date</label><input type="date" id="dbDate" onchange="renderMaster()"></div>
+                    <button class="btn-search" onclick="loadSharedDB()">REFRESH</button>
+                    <button onclick="downloadDB()" style="background:var(--success); color:white; border:none; padding:12px; border-radius:12px; font-weight:bold; cursor:pointer;">CSV</button>
                 </div>
             </div>
             <div class="card" style="padding:0; overflow-x:auto;">
@@ -109,17 +139,25 @@
         const CSV_PT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=0&single=true&output=csv';
         const CSV_COMMIT_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBb-hERkDWpd9_BufMG0ZK2idUC5e76qCz7wk96ybqHbrnrG1_xylG3JGWu0Vjor-DKNB1v2uCEG2C/pub?gid=915514461&single=true&output=csv';
         
-        let dataPT = [], dataCommit = [], masterData = [];
+        let dataPT = [], dataCommit = [], masterData = [], currentPending = null;
 
         window.onload = () => {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('inputDate').value = today;
             document.getElementById('reqDate').value = today;
             document.getElementById('dbDate').value = today;
-            fillTimeDropdown(); preloadData(); loadSharedDB();
+            fillTime(); preloadData(); loadSharedDB();
+            window.onclick = (e) => { if (!e.target.closest('.drop-multi')) document.querySelectorAll('.drop-list').forEach(d => d.style.display = 'none'); };
         };
 
-        function fillTimeDropdown() {
+        function toggleD(id) {
+            const el = document.getElementById(id);
+            const isVisible = el.style.display === 'block';
+            document.querySelectorAll('.drop-list').forEach(d => d.style.display = 'none');
+            el.style.display = isVisible ? 'none' : 'block';
+        }
+
+        function fillTime() {
             const sel = document.getElementById('time');
             for(let i=0; i<48; i++) {
                 let h = Math.floor(i/2).toString().padStart(2,'0'), m = i%2==0?'00':'30';
@@ -127,101 +165,107 @@
             }
         }
 
-        // Hàm xử lý CSV cực mạnh để không bị lỗi dấu phẩy
-        function parseCSV(str) {
-            const arr = [];
-            let quote = false;
-            for (let row = 0, col = 0, c = 0; c < str.length; c++) {
-                let cc = str[c], nc = str[c+1];
-                arr[row] = arr[row] || [];
-                arr[row][col] = arr[row][col] || '';
-                if (cc == '"' && quote && nc == '"') { arr[row][col] += cc; ++c; continue; }
-                if (cc == '"') { quote = !quote; continue; }
-                if (cc == ',' && !quote) { ++col; continue; }
-                if (cc == '\r' && nc == '\n' && !quote) { ++row; col = 0; ++c; continue; }
-                if (cc == '\n' && !quote) { ++row; col = 0; continue; }
-                if (cc == '\r' && !quote) { ++row; col = 0; continue; }
-                arr[row][col] += cc;
-            }
-            return arr.map(r => r.map(cell => cell.trim()));
+        async function preloadData() {
+            const [r1, r2] = await Promise.all([fetch(CSV_PT_URL), fetch(CSV_COMMIT_URL)]);
+            const t1 = await r1.text(), t2 = await r2.text();
+            dataPT = t1.split('\n').map(r => r.split(',').map(c => c.replace(/^"|"$/g, '').trim()));
+            dataCommit = t2.split('\n').map(r => r.split(',').map(c => c.replace(/^"|"$/g, '').trim()));
         }
 
-        async function preloadData() {
-            try {
-                const [r1, r2] = await Promise.all([fetch(CSV_PT_URL), fetch(CSV_COMMIT_URL)]);
-                dataPT = parseCSV(await r1.text());
-                dataCommit = parseCSV(await r2.text());
-                console.log("Data loaded:", dataPT.length, dataCommit.length);
-            } catch (e) { alert("Lỗi tải file CSV từ Google Sheet!"); }
+        // HÀM FIX TIME TRIỆT ĐỂ: Cắt bỏ mọi thứ, chỉ lấy HH:mm
+        function fixTime(t) {
+            if (!t) return "00:00";
+            let s = String(t).trim();
+            // Nếu là chuỗi dài "Sat Dec 30 1899 09:00:00 GMT..."
+            if (s.includes(':')) {
+                let parts = s.split(' ');
+                for (let p of parts) {
+                    if (p.includes(':') && p.split(':').length >= 2) {
+                        return p.substring(0, 5); // Lấy HH:mm
+                    }
+                }
+            }
+            return s.substring(0, 5);
         }
 
         function checkInfo() {
             const id = document.getElementById('wfmInput').value.trim().toUpperCase();
-            if(!id) return;
-            // Tìm mã WFM ở bất kỳ cột nào (thường là cột 8 hoặc 9)
-            const found = dataPT.find(r => r.some(cell => cell.toUpperCase() === id));
+            const found = dataPT.find(r => r[8] && r[8].toUpperCase() === id);
             if(found) {
-                document.getElementById('resName').innerText = found[3] || found[2] || "N/A";
-                document.getElementById('resVendor').innerText = found[1] || "N/A";
-                document.getElementById('resID').innerText = id;
-                document.getElementById('resUserId').innerText = found[9] || found[10] || found[11] || "-";
-                document.getElementById('resStatus').innerText = "MÃ HỢP LỆ!";
-            } else { alert("Không tìm thấy mã WFM: " + id); }
+                currentPending = {
+                    date: document.getElementById('inputDate').value,
+                    time: document.getElementById('time').value, wh: document.getElementById('wh').value,
+                    team: document.getElementById('team').value, vendor: found[1], wfmId: found[8],
+                    userId: found[9], name: found[3], email: found[10]
+                };
+                document.getElementById('resName').innerText = found[3];
+                document.getElementById('resVendor').innerText = found[1];
+                document.getElementById('resID').innerText = found[8];
+                document.getElementById('resUserId').innerText = found[9];
+                document.getElementById('resEmail').innerText = found[10];
+                document.getElementById('resStatus').innerText = "BẤM CONFIRM ĐỂ LƯU";
+            } else { alert("Sai mã!"); }
         }
 
         async function handleConfirm() {
-            const id = document.getElementById('resID').innerText;
-            if(id === "-") return alert("Hãy nhập mã WFM trước!");
-            const data = {
-                date: document.getElementById('inputDate').value,
-                time: document.getElementById('time').value,
-                wh: document.getElementById('wh').value,
-                team: document.getElementById('team').value,
-                vendor: document.getElementById('resVendor').innerText,
-                wfmId: id,
-                userId: document.getElementById('resUserId').innerText,
-                name: document.getElementById('resName').innerText
-            };
+            if(!currentPending) return;
             document.getElementById('resStatus').innerText = "SAVING...";
-            await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(data) });
+            await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(currentPending) });
             document.getElementById('resStatus').innerText = "DONE!";
             document.getElementById('wfmInput').value = "";
-            loadSharedDB();
+            currentPending = null;
+            await loadSharedDB();
         }
 
         async function loadSharedDB() {
-            try {
-                const res = await fetch(SCRIPT_URL);
-                masterData = await res.json();
-                const target = document.getElementById('dbDate').value;
-                const filtered = masterData.filter(r => r.date === target);
-                const html = filtered.map(r => `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.wh}</td><td>${r.team}</td><td>${r.vendor}</td><td>${r.wfmId}</td><td>${r.userId}</td><td>${r.name}</td></tr>`).join('');
-                document.getElementById('logList').innerHTML = html;
-                document.getElementById('masterBody').innerHTML = html;
-            } catch (e) { console.log("DB rỗng hoặc lỗi kết nối"); }
+            const res = await fetch(SCRIPT_URL);
+            masterData = await res.json();
+            renderLogs(); renderMaster();
+        }
+
+        function renderLogs() {
+            const target = document.getElementById('inputDate').value;
+            const filtered = masterData.filter(r => r.date === target);
+            document.getElementById('logList').innerHTML = filtered.map(l => `<tr><td>${l.date}</td><td>${fixTime(l.time)}</td><td>${l.wh}</td><td>${l.team}</td><td>${l.vendor}</td><td>${l.wfmId}</td><td>${l.userId}</td><td>${l.name}</td><td style="color:green">OK</td></tr>`).join('');
+        }
+
+        function renderMaster() {
+            const target = document.getElementById('dbDate').value;
+            const filtered = masterData.filter(r => r.date === target);
+            document.getElementById('masterBody').innerHTML = filtered.map(r => `<tr><td>${r.date}</td><td>${fixTime(r.time)}</td><td>${r.wh}</td><td>${r.team}</td><td>${r.vendor}</td><td>${r.wfmId}</td><td>${r.userId}</td><td>${r.name}</td></tr>`).join('');
         }
 
         function loadRequestData() {
             const dVal = document.getElementById('reqDate').value;
             const [y, m, d] = dVal.split('-');
             const dateStr = `${parseInt(d)}/${parseInt(m)}/${y}`;
-            const fWh = document.getElementById('reqWh').value;
-            const fTeam = document.getElementById('reqTeam').value;
+            let selWh = Array.from(document.querySelectorAll('#dWh input:checked')).map(i => i.value);
+            let selTeam = Array.from(document.querySelectorAll('#dTeam input:checked')).map(i => i.value);
+            const fWh = selWh.length > 0 ? selWh : ["VNDB", "VNDL"];
+            const fTeam = selTeam.length > 0 ? selTeam : ["Inbound", "Inventory", "FD", "Outbound", "HSE"];
 
             const filtered = dataCommit.filter(r => {
-                const cDate = (r[0] == dateStr || (r[0] && r[0].includes(`${parseInt(d)}/${parseInt(m)}`)));
-                const cWh = fWh === "" || r[1] === fWh;
-                const cTeam = fTeam === "" || r[3] === fTeam;
-                return cDate && cWh && cTeam;
+                const cDate = (r[0] === dateStr || r[0] === `${d}/${m}/${y}`);
+                return cDate && fWh.includes(r[1]) && fTeam.includes(r[3]);
             });
 
-            // Hiển thị 10 cột, bỏ cột H (Index 7)
-            document.getElementById('reqBody').innerHTML = filtered.map(r => `
-                <tr>
-                    <td>${r[0]||""}</td><td>${r[1]||""}</td><td>${r[2]||""}</td><td>${r[3]||""}</td><td>${r[4]||""}</td>
-                    <td>${r[5]||""}</td><td>${r[6]||""}</td><td>${r[8]||""}</td><td>${r[9]||""}</td><td>${r[10]||""}</td>
-                </tr>
-            `).join('');
+            // HIỂN THỊ 10 CỘT THEO ẢNH: BỎ CỘT H (Index 7)
+            document.getElementById('reqBody').innerHTML = filtered.map(r => {
+                return `<tr>
+                    <td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td>
+                    <td>${fixTime(r[5])}</td><td>${fixTime(r[6])}</td><td>${r[8]}</td><td>${r[9]}</td><td>${r[10]}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function downloadDB() {
+            let csv = "\uFEFFDATE,TIME,WH,TEAM,VENDOR,WFM ID,USER ID,NAME\n";
+            masterData.forEach(r => csv += `"${r.date}","${fixTime(r.time)}","${r.wh}","${r.team}","${r.vendor}","${r.wfmId}","${r.userId}","${r.name}"\n`);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `BPO_DATA.csv`;
+            link.click();
         }
 
         function switchTab(t, el) {
