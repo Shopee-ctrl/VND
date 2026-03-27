@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO SYSTEM - STABLE FULL</title>
+    <title>BPO SYSTEM - FINAL STABLE</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -114,7 +114,7 @@
                 <div class="card-title">BPO MASTER DATABASE</div>
                 <div style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 15px;">
                     <div style="flex: 1; max-width: 400px;">
-                        <label>CHỌN KHOẢNG NGÀY (SEARCH MỚI TẢI DATA)</label>
+                        <label>CHỌN KHOẢNG NGÀY</label>
                         <input type="text" id="dbDateRange" placeholder="Chọn khoảng ngày...">
                     </div>
                     <button class="btn-search-range" onclick="loadAndFilterDB()">SEARCH</button>
@@ -137,7 +137,7 @@
         let filteredDataForDownload = [];
 
         window.onload = () => {
-            const today = new Date().toISOString().split('T')[0];
+            const today = new Date().toLocaleDateString('en-CA'); // Lấy YYYY-MM-DD chuẩn máy khách
             document.getElementById('reqDate').value = today;
             datePicker = flatpickr("#dbDateRange", { mode: "range", dateFormat: "Y-m-d", defaultDate: [today, today] });
             fillTime(); preloadData(); fetchServerData();
@@ -154,7 +154,7 @@
         function preloadData() { Papa.parse(CSV_PT_URL, { download: true, skipEmptyLines: true, complete: res => { dataPT = res.data; } }); }
 
         async function fetchServerData() {
-            try { const res = await fetch(SCRIPT_URL); cachedData = await res.json(); renderTodayTable(); } catch(e) { console.error("Lỗi đồng bộ"); }
+            try { const res = await fetch(SCRIPT_URL); cachedData = await res.json(); renderTodayTable(); } catch(e) { console.error("Lỗi sync"); }
         }
 
         function checkInfo() {
@@ -172,12 +172,12 @@
 
         async function handleConfirm() {
             if(!currentPending) return alert("Quét mã trước!");
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = new Date().toLocaleDateString('en-CA');
             const isDup = cachedData.some(r => {
                 const rDate = r.date.includes('T') ? r.date.split('T')[0] : r.date;
                 return rDate === todayStr && r.wfmId.toString().toUpperCase() === currentPending.wfmId.toString().toUpperCase();
             });
-            if(isDup) return alert("MÃ NÀY ĐÃ NHẬP TRONG NGÀY HÔM NAY!");
+            if(isDup) return alert("LỖI: Mã này đã nhập rồi!");
 
             document.getElementById('resStatus').innerText = "SAVING...";
             await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams({...currentPending, date: todayStr}) });
@@ -187,23 +187,105 @@
             fetchServerData();
         }
 
-        // --- TASK 3 LOGIC ---
+        // --- TASK 3 FIX TRIỆT ĐỂ ---
         async function loadAndFilterDB() {
             const selected = datePicker.selectedDates;
-            if (selected.length < 2) return alert("Vui lòng chọn khoảng ngày!");
-            document.getElementById('masterBody').innerHTML = "<tr><td colspan='8' style='text-align:center'>Đang tải dữ liệu chuẩn...</td></tr>";
+            if (selected.length < 2) return alert("Chọn khoảng ngày!");
+            document.getElementById('masterBody').innerHTML = "<tr><td colspan='8' style='text-align:center'>Đang tải dữ liệu...</td></tr>";
             
             await fetchServerData();
             
-            const toDateStr = (date) => {
-                let d = new Date(date);
-                return d.getFullYear() + '-' + (d.getMonth() + 1).toString().padStart(2, '0') + '-' + d.getDate().toString().padStart(2, '0');
+            // Hàm ép ngày về chuỗi YYYY-MM-DD không quan tâm múi giờ
+            const toDateStr = (d) => {
+                const dateObj = new Date(d);
+                return dateObj.getFullYear() + '-' + (dateObj.getMonth() + 1).toString().padStart(2, '0') + '-' + dateObj.getDate().toString().padStart(2, '0');
             };
 
             const from = toDateStr(selected[0]);
             const to = toDateStr(selected[1]);
 
             filteredDataForDownload = cachedData.filter(r => {
-                const rowDateRaw = r.date.includes('T') ? r.date.split('T')[0] : r.date;
-                const rowDate = toDateStr(new Date(rowDateRaw));
-                return rowDate >= from && rowDate
+                const rowDateStr = r.date.includes('T') ? r.date.split('T')[0] : r.date;
+                return rowDateStr >= from && rowDateStr <= to;
+            });
+
+            renderTable('masterBody', filteredDataForDownload);
+        }
+
+        function downloadCSV() {
+            if(filteredDataForDownload.length === 0) return alert("Bấm SEARCH trước!");
+            let csv = "DATE,TIME,WH,TEAM,VENDOR,WFM_ID,USER_ID,NAME\n";
+            filteredDataForDownload.forEach(r => {
+                let dTime = r.time;
+                if (dTime && (dTime.includes('T') || dTime.includes('Sat'))) {
+                    const d = new Date(dTime);
+                    dTime = isNaN(d.getTime()) ? "00:00" : d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+                }
+                const dDate = r.date.includes('T') ? r.date.split('T')[0] : r.date;
+                csv += `${dDate},${dTime},${r.wh},${r.team},${r.vendor},${r.wfmId},${r.userId},"${r.name}"\n`;
+            });
+            
+            const BOM = "\uFEFF"; // Fix lỗi font tiếng Việt
+            const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `BPO_Data.csv`;
+            link.click();
+        }
+
+        function renderTodayTable() {
+            const today = new Date().toLocaleDateString('en-CA');
+            const todayData = cachedData.filter(r => (r.date.includes('T') ? r.date.split('T')[0] : r.date) === today);
+            renderTable('syncBody', todayData);
+        }
+
+        function renderTable(id, data) {
+            const tbody = document.getElementById(id);
+            if(data.length === 0) { tbody.innerHTML = "<tr><td colspan='8' style='text-align:center'>Không có data!</td></tr>"; return; }
+            tbody.innerHTML = data.map(r => {
+                let dTime = r.time;
+                if (dTime && (dTime.includes('T') || dTime.includes('Sat'))) {
+                    const d = new Date(dTime);
+                    dTime = isNaN(d.getTime()) ? "00:00" : d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+                }
+                const dDate = r.date.includes('T') ? r.date.split('T')[0] : r.date;
+                return `<tr><td>${dDate}</td><td>${dTime}</td><td>${r.wh}</td><td>${r.team}</td><td>${r.vendor}</td><td>${r.wfmId}</td><td>${r.userId}</td><td>${r.name}</td></tr>`;
+            }).reverse().join('');
+        }
+
+        function searchRequest() {
+            const fDate = document.getElementById('reqDate').value;
+            const fWh = document.getElementById('reqWh').value;
+            const selectedTeams = Array.from(document.querySelectorAll('#reqTeamGroup input:checked')).map(cb => cb.value);
+            const tbody = document.getElementById('reqBody');
+            tbody.innerHTML = "<tr><td colspan='9' style='text-align:center'>Loading...</td></tr>";
+            Papa.parse(CSV_TASK2_URL, {
+                download: true, header: false, skipEmptyLines: true,
+                complete: function(results) {
+                    const rows = results.data.slice(1);
+                    let filtered = rows.filter(row => {
+                        let mDate = (fDate === "") || (row[0] === formatSheetDate(fDate));
+                        let mWh = (fWh === "All") || (row[1] === fWh);
+                        let mTeam = (selectedTeams.length === 0) || (selectedTeams.includes(row[3]));
+                        return mDate && mWh && mTeam;
+                    });
+                    let total = 0;
+                    tbody.innerHTML = filtered.map(r => {
+                        let b = parseInt(r[9]) || 0; total += b;
+                        return `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>${r[8]}</td><td>${b}</td></tr>`;
+                    }).join('');
+                    document.getElementById('totalBookingCount').innerText = `TOTAL: ${total} Booking`;
+                }
+            });
+        }
+
+        function formatSheetDate(s) { if(!s) return ""; const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; }
+        function switchTab(t, el) {
+            document.querySelectorAll('.main-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(t).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+        }
+    </script>
+</body>
+</html>
