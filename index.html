@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>BPO SYSTEM - RECOVERY FINAL</title>
+    <title>BPO SYSTEM - FIXED TASK 3</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --sidebar: #13163a; --bg: #f4f7fe; --primary: #4d44ff; --border: #e0e5f2; }
@@ -45,7 +45,7 @@
                         <div><label>SHIFT</label><select id="shift"><option>Day</option><option>Night</option></select></div>
                     </div>
                     <label style="margin-top:10px;">WFM ID</label>
-                    <input type="text" id="wfmInput" placeholder="Gõ mã rồi Enter..." onkeypress="if(event.key==='Enter') checkInfo()">
+                    <input type="text" id="wfmInput" placeholder="Nhập mã rồi Enter..." onkeypress="if(event.key==='Enter') checkInfo()">
                     <button class="btn-confirm" onclick="handleConfirm()">CONFIRM</button>
                 </div>
                 <div class="card">
@@ -60,7 +60,7 @@
                 </div>
             </div>
             <div class="card" style="padding:0; overflow-x:auto;">
-                <table>
+                <table id="logTable">
                     <thead><tr><th>DATE</th><th>TIME</th><th>WH</th><th>TEAM</th><th>VENDOR</th><th>WFM ID</th><th>USER ID</th><th>NAME</th></tr></thead>
                     <tbody id="logList"></tbody>
                 </table>
@@ -75,7 +75,7 @@
                     <div><label>Warehouse</label><select id="reqWh"><option value="">Tất cả</option><option>VNDB</option><option>VNDL</option></select></div>
                     <div><label>Team</label><select id="reqTeam"><option value="">Tất cả</option><option>Inbound</option><option>Inventory</option><option>FD</option><option>Outbound</option><option>HSE</option></select></div>
                 </div>
-                <button class="btn-confirm" onclick="loadRequestData()" style="margin-top:15px;">SEARCH</button>
+                <button class="btn-confirm" onclick="loadRequestData()" style="margin-top:15px;">SEARCH DATA</button>
             </div>
             <div class="card" style="padding:0; overflow-x:auto;">
                 <table>
@@ -89,10 +89,10 @@
 
         <div id="database" class="main-content">
             <div class="card">
-                <div class="card-title">BPO DATABASE</div>
+                <div class="card-title">MASTER DATABASE (TASK 3)</div>
                 <div style="display: flex; gap:15px; align-items: flex-end;">
-                    <div style="flex:1;"><label>Date</label><input type="date" id="dbDate" onchange="loadSharedDB()"></div>
-                    <button class="btn-confirm" onclick="loadSharedDB()" style="width:150px;">REFRESH</button>
+                    <div style="flex:1;"><label>Date Filter</label><input type="date" id="dbDate" onchange="loadSharedDB()"></div>
+                    <button class="btn-confirm" onclick="loadSharedDB()" style="width:150px;">REFRESH DATA</button>
                 </div>
             </div>
             <div class="card" style="padding:0; overflow-x:auto;">
@@ -132,36 +132,28 @@
                 const [r1, r2] = await Promise.all([fetch(CSV_PT_URL), fetch(CSV_COMMIT_URL)]);
                 const t1 = await r1.text();
                 const t2 = await r2.text();
-                // Dùng split đơn giản nhất để tránh lỗi Regex
                 dataPT = t1.split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
                 dataCommit = t2.split('\n').map(row => row.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
-                console.log("Data Loaded");
-            } catch (e) { alert("Lỗi tải dữ liệu!"); }
+            } catch (e) { console.error("CSV error"); }
         }
 
         function checkInfo() {
             const id = document.getElementById('wfmInput').value.trim().toUpperCase();
             if(!id) return;
-
-            // QUÉT THÔNG MINH: Tìm hàng nào có chứa mã ID này ở bất kỳ cột nào (thường là cột 8 hoặc 9)
             const found = dataPT.find(row => row.some(cell => cell.toUpperCase() === id));
-
             if(found) {
-                // Cố gắng lấy đúng cột dựa trên ảnh mày gửi
-                document.getElementById('resName').innerText = found[3] || found[2] || "-"; // Cột D hoặc C
-                document.getElementById('resVendor').innerText = found[1] || "-"; // Cột B
+                document.getElementById('resName').innerText = found[3] || "-";
+                document.getElementById('resVendor').innerText = found[1] || "-";
                 document.getElementById('resID').innerText = id;
-                document.getElementById('resUserId').innerText = found[9] || found[10] || "-"; // Cột J hoặc K
+                document.getElementById('resUserId').innerText = found[9] || "-";
                 document.getElementById('resStatus').innerText = "MÃ OK!";
-            } else {
-                alert("Không thấy mã này trong Database!");
-            }
+            } else { alert("Không thấy mã!"); }
         }
 
         async function handleConfirm() {
             const id = document.getElementById('resID').innerText;
             if(id === "-") return;
-            const p = new URLSearchParams({
+            const params = new URLSearchParams({
                 date: document.getElementById('inputDate').value,
                 time: document.getElementById('time').value,
                 wh: document.getElementById('wh').value,
@@ -172,31 +164,48 @@
                 name: document.getElementById('resName').innerText
             });
             document.getElementById('resStatus').innerText = "SAVING...";
-            await fetch(`${SCRIPT_URL}?${p.toString()}`, { method: 'GET', mode: 'no-cors' });
-            document.getElementById('resStatus').innerText = "DONE!";
-            document.getElementById('wfmInput').value = "";
-            loadSharedDB();
+            await fetch(`${SCRIPT_URL}?${params.toString()}`, { method: 'GET', mode: 'no-cors' });
+            setTimeout(() => {
+                document.getElementById('resStatus').innerText = "DONE!";
+                document.getElementById('wfmInput').value = "";
+                loadSharedDB();
+            }, 1000);
         }
 
         async function loadSharedDB() {
             try {
                 const res = await fetch(SCRIPT_URL);
                 const data = await res.json();
-                const target = document.getElementById('dbDate').value;
-                const filtered = data.filter(r => r.date === target);
-                const html = filtered.map(r => `<tr><td>${r.date}</td><td>${r.time}</td><td>${r.wh}</td><td>${r.team}</td><td>${r.vendor}</td><td>${r.wfmId}</td><td>${r.userId}</td><td>${r.name}</td></tr>`).join('');
+                console.log("Data from Script:", data); // Check data ở F12
+                
+                const targetDate = document.getElementById('dbDate').value;
+                const html = data
+                    .filter(r => !targetDate || r.date === targetDate)
+                    .map(r => `<tr>
+                        <td>${r.date || ''}</td>
+                        <td>${r.time || ''}</td>
+                        <td>${r.wh || ''}</td>
+                        <td>${r.team || ''}</td>
+                        <td>${r.vendor || ''}</td>
+                        <td>${r.wfmId || ''}</td>
+                        <td>${r.userId || ''}</td>
+                        <td>${r.name || ''}</td>
+                    </tr>`).join('');
+                
                 document.getElementById('logList').innerHTML = html;
                 document.getElementById('masterBody').innerHTML = html;
-            } catch (e) { }
+            } catch (e) { 
+                console.error("Load Task 3 Error:", e);
+                document.getElementById('masterBody').innerHTML = "<tr><td colspan='8'>Đang chờ dữ liệu mới...</td></tr>";
+            }
         }
 
         function loadRequestData() {
             const dVal = document.getElementById('reqDate').value;
             if(!dVal) return;
             const [y, m, d] = dVal.split('-');
-            const search = `${parseInt(d)}/${parseInt(m)}`;
-            
-            const filtered = dataCommit.filter(r => r[0] && r[0].includes(search));
+            const sDate = `${parseInt(d)}/${parseInt(m)}`;
+            const filtered = dataCommit.filter(r => r[0] && r[0].includes(sDate));
             document.getElementById('reqBody').innerHTML = filtered.map(r => `
                 <tr>
                     <td>${r[0]||""}</td><td>${r[1]||""}</td><td>${r[2]||""}</td><td>${r[3]||""}</td><td>${r[4]||""}</td>
